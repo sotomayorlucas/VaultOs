@@ -2,16 +2,11 @@
 #include "sha256.h"
 #include "../lib/string.h"
 
-void hmac_sha256(const uint8_t *key, size_t key_len,
-                  const uint8_t *data, size_t data_len,
-                  uint8_t mac[32]) {
+void hmac_ctx_init(hmac_ctx_t *ctx, const uint8_t *key, size_t key_len) {
     uint8_t key_block[SHA256_BLOCK_SIZE];
-    uint8_t ipad[SHA256_BLOCK_SIZE];
-    uint8_t opad[SHA256_BLOCK_SIZE];
-    uint8_t inner_hash[SHA256_DIGEST_SIZE];
-    sha256_ctx_t ctx;
+    uint8_t pad[SHA256_BLOCK_SIZE];
 
-    /* If key > block size, hash it first */
+    /* Normalize key to block size */
     if (key_len > SHA256_BLOCK_SIZE) {
         sha256(key, key_len, key_block);
         memset(key_block + SHA256_DIGEST_SIZE, 0,
@@ -21,23 +16,41 @@ void hmac_sha256(const uint8_t *key, size_t key_len,
         memset(key_block + key_len, 0, SHA256_BLOCK_SIZE - key_len);
     }
 
-    /* Inner padding */
-    for (int i = 0; i < SHA256_BLOCK_SIZE; i++) {
-        ipad[i] = key_block[i] ^ 0x36;
-        opad[i] = key_block[i] ^ 0x5C;
-    }
+    /* Pre-compute inner SHA-256 state (after processing ipad) */
+    for (int i = 0; i < SHA256_BLOCK_SIZE; i++)
+        pad[i] = key_block[i] ^ 0x36;
+    sha256_init(&ctx->inner_base);
+    sha256_update(&ctx->inner_base, pad, SHA256_BLOCK_SIZE);
 
-    /* Inner hash: SHA256(ipad || data) */
-    sha256_init(&ctx);
-    sha256_update(&ctx, ipad, SHA256_BLOCK_SIZE);
-    sha256_update(&ctx, data, data_len);
-    sha256_final(&ctx, inner_hash);
+    /* Pre-compute outer SHA-256 state (after processing opad) */
+    for (int i = 0; i < SHA256_BLOCK_SIZE; i++)
+        pad[i] = key_block[i] ^ 0x5C;
+    sha256_init(&ctx->outer_base);
+    sha256_update(&ctx->outer_base, pad, SHA256_BLOCK_SIZE);
+}
 
-    /* Outer hash: SHA256(opad || inner_hash) */
-    sha256_init(&ctx);
-    sha256_update(&ctx, opad, SHA256_BLOCK_SIZE);
-    sha256_update(&ctx, inner_hash, SHA256_DIGEST_SIZE);
-    sha256_final(&ctx, mac);
+void hmac_ctx_compute(const hmac_ctx_t *ctx,
+                       const uint8_t *data, size_t data_len,
+                       uint8_t mac[32]) {
+    uint8_t inner_hash[SHA256_DIGEST_SIZE];
+
+    /* Clone pre-computed inner state and hash data */
+    sha256_ctx_t inner = ctx->inner_base;
+    sha256_update(&inner, data, data_len);
+    sha256_final(&inner, inner_hash);
+
+    /* Clone pre-computed outer state and hash inner result */
+    sha256_ctx_t outer = ctx->outer_base;
+    sha256_update(&outer, inner_hash, SHA256_DIGEST_SIZE);
+    sha256_final(&outer, mac);
+}
+
+void hmac_sha256(const uint8_t *key, size_t key_len,
+                  const uint8_t *data, size_t data_len,
+                  uint8_t mac[32]) {
+    hmac_ctx_t ctx;
+    hmac_ctx_init(&ctx, key, key_len);
+    hmac_ctx_compute(&ctx, data, data_len, mac);
 }
 
 bool hmac_verify(const uint8_t *expected, const uint8_t *computed, size_t len) {

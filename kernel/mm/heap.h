@@ -9,6 +9,9 @@ void *kzalloc(size_t size);
 void *krealloc(void *ptr, size_t new_size);
 void  kfree(void *ptr);
 
+/* Expand heap by allocating additional physical pages */
+int heap_expand(size_t bytes);
+
 /* Heap statistics */
 size_t heap_used(void);
 size_t heap_free(void);

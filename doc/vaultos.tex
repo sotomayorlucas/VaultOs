@@ -1,0 +1,1745 @@
+% =============================================================================
+% VaultOS: A Capability-Secured Nanokernel with Database-Centric Architecture
+% Design, Algorithms, and Implementation
+% LaTeX Document — CLRS Style
+% =============================================================================
+\documentclass[11pt,twoside,openright]{book}
+
+% --- Geometry ---
+\usepackage[
+  paperwidth=7in, paperheight=10in,
+  inner=1in, outer=0.75in,
+  top=0.9in, bottom=1in,
+  headheight=14pt
+]{geometry}
+
+% --- Fonts and Encoding ---
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Math ---
+\usepackage{amsmath,amssymb,amsthm}
+
+% --- Algorithms (CLRS style) ---
+\usepackage[ruled,lined,linesnumbered,noend]{algorithm2e}
+\SetKwProg{Fn}{Function}{:}{}
+\SetKwFunction{proc}{Procedure}
+\SetKwIF{If}{ElseIf}{Else}{if}{then}{else if}{else}{}
+\SetKwFor{For}{for}{do}{}
+\SetKwFor{While}{while}{do}{}
+\SetKw{Return}{return}
+\SetKw{And}{and}
+\SetKw{Or}{or}
+\SetKw{Not}{not}
+\SetKw{True}{true}
+\SetKw{False}{false}
+\SetKw{Nil}{nil}
+\SetKw{To}{to}
+\SetKw{DownTo}{downto}
+\SetKw{Error}{error}
+\SetAlgoSkip{medskip}
+\DontPrintSemicolon
+
+% --- TikZ ---
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes,positioning,calc,fit,backgrounds,chains,decorations.pathreplacing}
+
+% --- Code listings ---
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+  stringstyle=\color{darkgray},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  xleftmargin=1.5em,
+  language=C
+}
+
+% --- Tables ---
+\usepackage{booktabs,tabularx,array,multirow}
+
+% --- Colors ---
+\usepackage{xcolor}
+\definecolor{chaptercolor}{RGB}{0,51,102}
+\definecolor{algcolor}{RGB}{240,245,250}
+
+% --- Headers/Footers ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\itshape\leftmark}
+\fancyhead[RO]{\small\itshape\rightmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Chapter/Section Styling ---
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{chaptercolor}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}{\normalfont\Large\bfseries\color{chaptercolor}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% --- Theorem Environments ---
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{property}[theorem]{Property}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{observation}[theorem]{Observation}
+
+% --- Hyperref ---
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=chaptercolor,
+  citecolor=chaptercolor,
+  urlcolor=chaptercolor,
+  pdfauthor={VaultOS Development Team},
+  pdftitle={VaultOS: A Capability-Secured Nanokernel},
+}
+
+% --- Misc ---
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+
+% --- Custom Commands ---
+\newcommand{\BigO}{\mathcal{O}}
+\newcommand{\field}[1]{\textit{#1}}
+\newcommand{\const}[1]{\textsc{#1}}
+\newcommand{\reg}[1]{\texttt{#1}}
+\newcommand{\hex}[1]{\texttt{0x#1}}
+\newcommand{\VaultOS}{\textsc{VaultOS}}
+\newcommand{\xmark}{\ding{55}}
+
+% =============================================================================
+\begin{document}
+
+% --- Title Page ---
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\color{chaptercolor} VaultOS\par}
+\vspace{0.5cm}
+{\LARGE A Capability-Secured Nanokernel with\\Database-Centric Architecture\par}
+\vspace{1cm}
+{\Large\itshape Design, Algorithms, and Implementation\par}
+\vspace{2cm}
+\begin{tikzpicture}[
+  layer/.style={draw,thick,minimum width=11cm,minimum height=0.8cm,
+    fill=#1,font=\sffamily\small},
+]
+\node[layer=blue!8]                         (hw)  {x86\_64 Hardware $\cdot$ UEFI Firmware};
+\node[layer=blue!15,above=0pt of hw]        (nk)  {Nanokernel Core: Scheduler $\cdot$ Memory $\cdot$ Interrupts $\cdot$ Drivers};
+\node[layer=blue!22,above=0pt of nk]        (cr)  {Cryptographic Engine: AES-128 $\cdot$ SHA-256 $\cdot$ HMAC $\cdot$ RNG};
+\node[layer=blue!30,above=0pt of cr]        (cp)  {Capability Manager $\cdot$ Encrypted Database Engine};
+\node[layer=blue!40,above=0pt of cp,
+  font=\sffamily\small\color{white}]        (sh)  {VaultShell: SQL Query REPL};
+\end{tikzpicture}
+\vspace{2cm}
+{\large February 2026\par}
+\end{titlepage}
+
+\frontmatter
+\tableofcontents
+
+% =============================================================================
+% PREFACE
+% =============================================================================
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+
+\VaultOS{} is a nanokernel operating system built on two radical premises:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Everything is a database.} There is no file system, no \texttt{/proc}, no device files.
+Every system resource---processes, capabilities, messages, user data---is a row in an
+encrypted relational table, accessible only through a SQL-subset query language.
+
+\item \textbf{All data is confidential.} Every database record is encrypted with AES-128-CBC
+using per-table keys derived from a master secret via HMAC-SHA256. Every access
+requires a cryptographically sealed capability token that proves authorization.
+\end{enumerate}
+
+\noindent
+\VaultOS{} deliberately rejects POSIX. There are no file descriptors, no \texttt{fork()},
+no signals, no pipes, and no user/group permission bits. Instead, the system provides
+a small, formally analyzable interface: database queries mediated by unforgeable
+capability tokens.
+
+\paragraph{Conventions.}
+Algorithms are presented in the pseudocode style of Cormen, Leiserson, Rivest, and
+Stein~(CLRS). We use $\BigO$-notation for asymptotic analysis. Diagrams use
+TikZ. Source code excerpts are in~C or x86-64 assembly.
+
+\mainmatter
+
+% =============================================================================
+% PART I: FOUNDATIONS
+% =============================================================================
+\part{Foundations}
+
+% -----------------------------------------------------------------------------
+\chapter{Introduction and Design Philosophy}
+\label{ch:intro}
+
+% -----------------------------------------------------------------------------
+\section{The Database-as-OS Paradigm}
+\label{sec:db-paradigm}
+
+Traditional operating systems expose heterogeneous interfaces: a file system for
+persistent storage, \texttt{/proc} for process metadata, signals for asynchronous
+notification, and sockets for communication. Each subsystem has its own access-control
+model, its own naming scheme, and its own failure modes.
+
+\VaultOS{} replaces this patchwork with a single abstraction: the \emph{encrypted
+relational table}. Six system tables (Table~\ref{tab:system-tables}) store all kernel
+state. User interaction proceeds entirely through a SQL-subset query language executed
+by the \textsc{VaultShell} REPL.
+
+\begin{table}[htb]
+\centering
+\caption{VaultOS system tables.}
+\label{tab:system-tables}
+\begin{tabular}{@{}llcp{5.5cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Table} & \textbf{Encrypted} & \textbf{Purpose} \\
+\midrule
+0 & \texttt{SystemTable}     & Yes & Boot metadata (OS name, version) \\
+1 & \texttt{ProcessTable}    & Yes & Active processes (PID, state, capabilities) \\
+2 & \texttt{CapabilityTable} & Yes & HMAC-sealed access tokens \\
+3 & \texttt{ObjectTable}     & Yes & User-defined objects (data blobs) \\
+4 & \texttt{MessageTable}    & Yes & IPC message queue \\
+5 & \texttt{AuditTable}      & Yes & Security audit log \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{definition}[Database-as-OS]
+An operating system in which every named resource $r$ has a canonical representation
+as a tuple $\langle \mathrm{id}, \mathrm{col}_1, \ldots, \mathrm{col}_k \rangle$ in a
+table $T$, and every operation on $r$ is expressed as a query
+$Q \in \{\textsc{Select}, \textsc{Insert}, \textsc{Update}, \textsc{Delete}\}$ over~$T$.
+\end{definition}
+
+% -----------------------------------------------------------------------------
+\section{Capability-Based Security Model}
+\label{sec:cap-model}
+
+Access control in \VaultOS{} is based on \emph{capabilities}: unforgeable tokens that
+encode a subject's rights over an object.
+
+\begin{definition}[Capability]
+A capability is a tuple
+\[
+  c = \bigl(\mathrm{cap\_id},\; \mathrm{obj\_id},\; \mathrm{type},\;
+       \mathrm{owner},\; \mathrm{rights},\; \mathrm{parent},\; \sigma\bigr)
+\]
+where $\sigma = \mathrm{HMAC\text{-}SHA256}(K_{\mathrm{master}},\;
+\mathrm{cap\_id} \| \mathrm{obj\_id} \| \mathrm{owner} \| \mathrm{rights} \|
+\mathrm{type} \| \mathrm{parent})$ is a 256-bit cryptographic seal.
+\end{definition}
+
+\noindent
+Rights are encoded as a 6-bit mask:
+
+\begin{center}
+\begin{tabular}{@{}clc@{}}
+\toprule
+\textbf{Bit} & \textbf{Right} & \textbf{Value} \\
+\midrule
+0 & \const{Read}    & $2^0$ \\
+1 & \const{Write}   & $2^1$ \\
+2 & \const{Execute} & $2^2$ \\
+3 & \const{Delete}  & $2^3$ \\
+4 & \const{Grant}   & $2^4$ \\
+5 & \const{Revoke}  & $2^5$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{theorem}[Capability Unforgeability]
+\label{thm:cap-unforge}
+An adversary who does not know the master key $K_{\mathrm{master}}$ cannot produce a
+valid capability $c'$ (one whose HMAC verifies) except with probability negligible in
+$|K_{\mathrm{master}}|$, assuming HMAC-SHA256 is a secure PRF.
+\end{theorem}
+\begin{proof}
+If an adversary could forge a capability $c'$ with non-negligible probability, they
+could construct a distinguisher for HMAC-SHA256 as a PRF, contradicting the assumed
+security of the construction (RFC~2104). The 40-byte input domain is fixed, so no
+length-extension attacks apply.
+\end{proof}
+
+% -----------------------------------------------------------------------------
+\section{Threat Model}
+\label{sec:threat}
+
+\VaultOS{} protects against:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Unauthorized data access:} All records encrypted; queries require valid capabilities.
+  \item \textbf{Capability forgery:} HMAC-SHA256 seal prevents fabrication.
+  \item \textbf{Timing side-channels:} Constant-time HMAC comparison prevents timing attacks.
+  \item \textbf{Privilege escalation:} Delegated capabilities are strict subsets of parent rights.
+\end{itemize}
+
+Out of scope (MVP): cold-boot attacks, hardware Trojans, DMA attacks, Spectre/Meltdown.
+
+% -----------------------------------------------------------------------------
+\section{System Architecture Overview}
+\label{sec:arch-overview}
+
+Figure~\ref{fig:architecture} shows the layered architecture.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  block/.style={draw,thick,rounded corners=2pt,minimum width=12cm,
+    minimum height=1cm,font=\sffamily\small,text=black},
+  >=Stealth
+]
+\node[block,fill=gray!10]                     (hw)  {x86\_64 Hardware: CPU, RAM, PIC, PIT, PS/2, COM1, GOP};
+\node[block,fill=blue!8,above=4pt of hw]      (drv) {Drivers: Serial, Framebuffer, Keyboard, Font};
+\node[block,fill=blue!12,above=4pt of drv]    (mm)  {Memory: PMM (Bitmap) $\mid$ VMM (4-Level Paging) $\mid$ Heap (First-Fit)};
+\node[block,fill=blue!18,above=4pt of mm]     (cry) {Crypto: AES-128-CBC $\mid$ SHA-256 $\mid$ HMAC-SHA256 $\mid$ RDRAND RNG};
+\node[block,fill=blue!25,above=4pt of cry]    (cap) {Security: Capability Manager (HMAC Tokens, Validation Cache)};
+\node[block,fill=blue!32,above=4pt of cap]    (db)  {Database: B-Tree Index $\mid$ Record Store $\mid$ Query Parser $\mid$ Transactions};
+\node[block,fill=blue!40,above=4pt of db,
+  text=white]                                  (sh)  {VaultShell: SQL REPL $\mid$ Line Editor $\mid$ Display Formatter};
+
+\draw[->,thick] (sh) -- (db);
+\draw[->,thick] (db) -- (cap);
+\draw[->,thick] (cap) -- (cry);
+\draw[->,thick] (cry) -- (mm);
+\draw[->,thick] (mm) -- (drv);
+\draw[->,thick] (drv) -- (hw);
+\end{tikzpicture}
+\caption{VaultOS layered architecture. Each layer depends only on the layers below it.}
+\label{fig:architecture}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\section{Comparison with Traditional OS Designs}
+\label{sec:comparison}
+
+\begin{table}[htb]
+\centering
+\caption{VaultOS vs.\ POSIX-based operating systems.}
+\label{tab:comparison}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Aspect}          & \textbf{POSIX}               & \textbf{VaultOS} \\
+\midrule
+Resource abstraction     & Files, sockets, pipes        & Database rows \\
+Access control           & uid/gid, rwx bits            & HMAC-sealed capabilities \\
+Naming                   & Hierarchical paths           & Table + row ID \\
+IPC                      & Pipes, signals, shmem        & Message table + queries \\
+Process interface        & \texttt{fork/exec/wait}      & \texttt{proc\_create/exit} \\
+Encryption               & Optional (dm-crypt, etc.)    & Mandatory, per-table \\
+Audit                    & Syslog (optional)            & Built-in AuditTable \\
+User interface           & Shell + utilities            & SQL REPL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\chapter{System Bootstrap}
+\label{ch:boot}
+
+% -----------------------------------------------------------------------------
+\section{UEFI Boot Protocol}
+
+The bootloader is a PE32+ EFI application compiled against GNU-EFI. It executes the
+following steps:
+
+\begin{enumerate}
+\item Initialize the Graphics Output Protocol (GOP) at $1024 \times 768$ resolution.
+\item Open the FAT32 system partition and load \texttt{VAULTOS.BIN} at physical address
+      \hex{100000} (1\,MiB).
+\item Acquire the UEFI memory map (with retry around \texttt{ExitBootServices}).
+\item Locate the ACPI RSDP from the EFI configuration tables.
+\item Transfer control to \texttt{kernel\_main(BootInfo~*)} at the kernel physical base.
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\section{BootInfo Structure}
+
+The bootloader passes a packed structure containing framebuffer parameters, the UEFI
+memory map, kernel location, and runtime service pointers:
+
+\begin{lstlisting}[caption={BootInfo structure (simplified).}]
+typedef struct __attribute__((packed)) {
+    uint64_t fb_base, fb_width, fb_height, fb_pitch;
+    uint32_t fb_bpp, fb_pixel_format;
+    uint64_t mmap_base, mmap_size, mmap_desc_size;
+    uint32_t mmap_entry_count;
+    uint64_t kernel_phys_base, kernel_size;
+    uint64_t rsdp_address;
+} BootInfo;
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Kernel Initialization Sequence}
+\label{sec:boot-sequence}
+
+The kernel initializes ten subsystems in strict dependency order
+(Figure~\ref{fig:boot-flow}).
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  phase/.style={draw,rounded corners=3pt,minimum width=3.8cm,
+    minimum height=0.6cm,font=\sffamily\footnotesize,fill=blue!10},
+  arr/.style={->,>=Stealth,thick},
+  node distance=0.3cm
+]
+\node[phase]                    (p1) {1. Serial Init};
+\node[phase,right=0.4cm of p1]  (p2) {2. GDT + IDT + PIC};
+\node[phase,below=of p1]       (p3) {3. PMM + VMM + Heap};
+\node[phase,right=0.4cm of p3]  (p4) {4. FB + PIT + Keyboard};
+\node[phase,below=of p3]       (p5) {5. RNG + Crypto Tests};
+\node[phase,right=0.4cm of p5]  (p6) {6. Capability System};
+\node[phase,below=of p5]       (p7) {7. Database Engine};
+\node[phase,right=0.4cm of p7]  (p8) {8. Process + Scheduler};
+\node[phase,below=of p7]       (p9) {9. SYSCALL Interface};
+\node[phase,right=0.4cm of p9]  (p10){10. VaultShell Launch};
+
+\draw[arr] (p1) -- (p2);
+\draw[arr] (p2) |- (p3);
+\draw[arr] (p3) -- (p4);
+\draw[arr] (p4) |- (p5);
+\draw[arr] (p5) -- (p6);
+\draw[arr] (p6) |- (p7);
+\draw[arr] (p7) -- (p8);
+\draw[arr] (p8) |- (p9);
+\draw[arr] (p9) -- (p10);
+\end{tikzpicture}
+\caption{Kernel initialization sequence. Each phase depends on all preceding phases.}
+\label{fig:boot-flow}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\section{Higher-Half Kernel Design}
+
+The kernel is linked at virtual address \hex{FFFFFFFF80000000} but loaded at physical
+address \hex{100000}. This \emph{higher-half} design reserves the lower 128\,TiB of
+virtual space for user processes.
+
+\begin{definition}[Virtual Address Space Layout]
+\label{def:vas}
+The 48-bit canonical virtual address space is partitioned as follows:
+\begin{align*}
+&\texttt{0x0000000000000000} \text{--} \texttt{0x00007FFFFFFFFFFF} &&\text{User space (128\,TiB)} \\
+&\texttt{0xFFFFFFFF80000000} \text{--} \texttt{0xFFFFFFFF81FFFFFF} &&\text{Kernel code/data (2\,MiB)} \\
+&\texttt{0xFFFFFFFF82000000} \text{--} \texttt{0xFFFFFFFF91FFFFFF} &&\text{Kernel heap (256\,MiB)} \\
+&\texttt{0xFFFFFFFF92000000} \text{--} \texttt{0xFFFFFFFFBFFFFFFF} &&\text{Physical direct map (up to 1\,GiB)} \\
+&\texttt{0xFFFFFFFFC0000000} \text{--} \texttt{0xFFFFFFFFCFFFFFFF} &&\text{Framebuffer}
+\end{align*}
+\end{definition}
+
+% =============================================================================
+% PART II: MEMORY MANAGEMENT
+% =============================================================================
+\part{Memory Management}
+
+% =============================================================================
+\chapter{Physical Memory Manager}
+\label{ch:pmm}
+
+The physical memory manager (PMM) tracks the availability of 4\,KiB physical pages
+using a bitmap data structure.
+
+\section{Bitmap Allocator Design}
+
+\begin{definition}[Page Bitmap]
+Let $N = \lfloor M / 4096 \rfloor$ be the number of physical pages, where $M$ is the
+total physical memory in bytes. The bitmap $B[0 \ldots \lceil N/64 \rceil - 1]$ is an
+array of 64-bit words where bit $i$ of word $B[\lfloor i/64 \rfloor]$ is~1 if page~$i$
+is allocated, and~0 if free.
+\end{definition}
+
+For 4\,GiB of RAM, $N = 2^{20}$ pages and the bitmap occupies
+$2^{20}/8 = 128$\,KiB---a fixed overhead of 0.003\%.
+
+\section{Algorithm: \textsc{Pmm-Alloc}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Pmm-Alloc}(): Allocate one physical page.}
+\label{alg:pmm-alloc}
+\For{$w \leftarrow 0$ \To $\lceil N/64 \rceil - 1$}{
+  \If{$B[w] \neq \texttt{0xFFFFFFFFFFFFFFFF}$}{
+    $b \leftarrow$ index of lowest clear bit in $B[w]$ \tcp*{\texttt{\_\_builtin\_ctzll(\texttildelow B[w])}}
+    $\text{page} \leftarrow 64w + b$ \;
+    \If{$\text{page} < N$}{
+      set bit $b$ in $B[w]$ \;
+      $\text{used\_pages} \leftarrow \text{used\_pages} + 1$ \;
+      \Return $\text{page} \times 4096$ \tcp*{physical address}
+    }
+  }
+}
+\Return $0$ \tcp*{out of memory}
+\end{algorithm}
+
+\section{Algorithm: \textsc{Pmm-Free}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Pmm-Free}(\text{phys\_addr}): Free one physical page.}
+\label{alg:pmm-free}
+$\text{page} \leftarrow \text{phys\_addr} / 4096$ \;
+\If{$\text{page} \geq N$ \Or bit $(\text{page} \bmod 64)$ of $B[\lfloor\text{page}/64\rfloor]$ is clear}{
+  \Error \text{``double free or invalid page''} \;
+}
+clear bit $(\text{page} \bmod 64)$ in $B[\lfloor\text{page}/64\rfloor]$ \;
+$\text{used\_pages} \leftarrow \text{used\_pages} - 1$ \;
+\end{algorithm}
+
+\section{Complexity Analysis}
+
+\begin{theorem}[PMM Allocation Complexity]
+\textsc{Pmm-Alloc} runs in $\BigO(N/64)$ worst-case time and $\BigO(1)$ best-case time,
+where $N$ is the number of physical pages.
+\end{theorem}
+\begin{proof}
+The outer loop iterates over at most $\lceil N/64 \rceil$ words. Each iteration
+performs a constant-time comparison and bit scan. In the best case, the first word
+contains a free bit. In the worst case, all words must be scanned.
+The per-word bit scan (\texttt{ctzll}) executes in $\BigO(1)$ on x86-64 via the
+\texttt{BSF}/\texttt{TZCNT} instruction.
+\end{proof}
+
+% =============================================================================
+\chapter{Virtual Memory and Paging}
+\label{ch:vmm}
+
+\section{x86-64 Four-Level Page Tables}
+
+The x86-64 architecture uses a four-level radix tree to translate 48-bit virtual
+addresses to physical addresses.
+
+\begin{definition}[Page Table Entry]
+A 64-bit page table entry (PTE) encodes:
+\[
+\text{PTE} = \underbrace{\text{phys\_addr}[51:12]}_{40\text{ bits}} \;\|\;
+             \underbrace{\text{flags}[11:0]}_{12\text{ bits}}
+\]
+where flags include Present~(P), Writable~(W), User~(U), and No-Execute~(NX, bit~63).
+\end{definition}
+
+\begin{definition}[Virtual Address Decomposition]
+A 48-bit virtual address $v$ is decomposed as:
+\begin{align*}
+\text{PML4 index} &= (v \gg 39) \;\&\; \texttt{0x1FF} \\
+\text{PDPT index} &= (v \gg 30) \;\&\; \texttt{0x1FF} \\
+\text{PD index}   &= (v \gg 21) \;\&\; \texttt{0x1FF} \\
+\text{PT index}   &= (v \gg 12) \;\&\; \texttt{0x1FF} \\
+\text{Offset}     &= v \;\&\; \texttt{0xFFF}
+\end{align*}
+\end{definition}
+
+\section{Virtual Address Space Layout}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  region/.style={draw,thick,minimum width=9cm,minimum height=0.7cm,
+    font=\ttfamily\footnotesize,anchor=west},
+]
+\node[region,fill=green!10]   at (0,5.6)  {0x0000000000000000 -- User Space (128 TiB)};
+\node[region,fill=gray!15]    at (0,4.8)  {... (non-canonical hole) ...};
+\node[region,fill=blue!10]    at (0,4.0)  {0xFFFFFFFF80000000 -- Kernel Code/Data (2 MiB)};
+\node[region,fill=blue!15]    at (0,3.2)  {0xFFFFFFFF82000000 -- Kernel Heap (256 MiB)};
+\node[region,fill=blue!20]    at (0,2.4)  {0xFFFFFFFF92000000 -- Physical Direct Map (1 GiB)};
+\node[region,fill=orange!15]  at (0,1.6)  {0xFFFFFFFFC0000000 -- Framebuffer};
+\end{tikzpicture}
+\caption{Virtual address space layout of the VaultOS kernel.}
+\label{fig:vas}
+\end{figure}
+
+\section{Algorithm: \textsc{Page-Map}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Page-Map}($\text{pml4}$, $\text{virt}$, $\text{phys}$, $\text{flags}$):
+Map a virtual page to a physical frame.}
+\label{alg:page-map}
+$\text{pml4e} \leftarrow \text{pml4}[\text{PML4\_INDEX}(\text{virt})]$ \;
+\If{$\text{pml4e}$ is \Not present}{
+  allocate a zeroed page for PDPT \;
+  $\text{pml4}[\text{PML4\_INDEX}(\text{virt})] \leftarrow \text{pdpt\_phys} \;|\; \text{P} \;|\; \text{W}$ \;
+}
+$\text{pdpt} \leftarrow$ extract address from pml4e \;
+\tcp{Repeat for PDPT $\to$ PD $\to$ PT}
+\tcp{(Each level: check present, allocate if needed, descend)}
+$\text{pt}[\text{PT\_INDEX}(\text{virt})] \leftarrow \text{phys} \;|\; \text{flags}$ \;
+\end{algorithm}
+
+\section{Algorithm: \textsc{Virt-To-Phys}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Virt-To-Phys}($\text{pml4}$, $\text{virt}$): Translate virtual to physical address.}
+\label{alg:virt-to-phys}
+Walk PML4 $\to$ PDPT $\to$ PD $\to$ PT using index functions \;
+\If{any level is \Not present}{
+  \Return $0$ \tcp*{page not mapped}
+}
+\If{PD entry has Huge flag (2\,MiB page)}{
+  \Return $\text{pd\_phys} \;|\; (\text{virt} \;\&\; \texttt{0x1FFFFF})$ \;
+}
+\Return $\text{pt\_phys} \;|\; (\text{virt} \;\&\; \texttt{0xFFF})$ \;
+\end{algorithm}
+
+\begin{theorem}[Translation Correctness]
+For any virtual address $v$ mapped via \textsc{Page-Map} to physical address $p$ with
+flags $f$, a subsequent call to \textsc{Virt-To-Phys} returns $p$, provided no
+intervening unmap or CR3 reload invalidates the mapping.
+\end{theorem}
+
+% =============================================================================
+\chapter{Kernel Heap Allocator}
+\label{ch:heap}
+
+\section{First-Fit with Coalescing}
+
+The kernel heap is a doubly-linked list of blocks, each preceded by a header:
+
+\begin{lstlisting}[caption={Heap block header.}]
+typedef struct heap_block {
+    uint64_t     magic;    /* 0xDEADBEEF */
+    size_t       size;     /* usable data bytes */
+    bool         free;
+    heap_block_t *next, *prev;
+} heap_block_t;
+\end{lstlisting}
+
+\section{Algorithm: \textsc{Kmalloc}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Kmalloc}($n$): Allocate $n$ bytes from the kernel heap.}
+\label{alg:kmalloc}
+$n \leftarrow \textsc{Align-Up}(n, 16)$ \;
+$b \leftarrow \text{head of block list}$ \;
+\While{$b \neq \Nil$}{
+  \If{$b.\field{free}$ \And $b.\field{size} \geq n$}{
+    \If{$b.\field{size} - n > \text{sizeof(header)} + 32$}{
+      \textsc{Split}($b$, $n$) \tcp*{create free block from remainder}
+    }
+    $b.\field{free} \leftarrow \False$ \;
+    \Return pointer to $b$'s data area \;
+  }
+  $b \leftarrow b.\field{next}$ \;
+}
+\Return \Nil \tcp*{out of memory}
+\end{algorithm}
+
+\section{Algorithm: \textsc{Kfree} with Coalescing}
+
+\begin{algorithm}[H]
+\caption{\textsc{Kfree}($p$): Free a previously allocated block and coalesce neighbors.}
+\label{alg:kfree}
+$b \leftarrow$ block header preceding $p$ \;
+\textbf{assert} $b.\field{magic} = \texttt{0xDEADBEEF}$ \;
+$b.\field{free} \leftarrow \True$ \;
+\tcp{Forward coalescing}
+\If{$b.\field{next} \neq \Nil$ \And $b.\field{next}.\field{free}$}{
+  $b.\field{size} \leftarrow b.\field{size} + \text{sizeof(header)} + b.\field{next}.\field{size}$ \;
+  $b.\field{next} \leftarrow b.\field{next}.\field{next}$ \;
+  \If{$b.\field{next} \neq \Nil$}{$b.\field{next}.\field{prev} \leftarrow b$}
+}
+\tcp{Backward coalescing}
+\If{$b.\field{prev} \neq \Nil$ \And $b.\field{prev}.\field{free}$}{
+  $b.\field{prev}.\field{size} \leftarrow b.\field{prev}.\field{size} + \text{sizeof(header)} + b.\field{size}$ \;
+  $b.\field{prev}.\field{next} \leftarrow b.\field{next}$ \;
+  \If{$b.\field{next} \neq \Nil$}{$b.\field{next}.\field{prev} \leftarrow b.\field{prev}$}
+}
+\end{algorithm}
+
+\begin{theorem}[Heap Invariant]
+After any sequence of \textsc{Kmalloc} and \textsc{Kfree} operations, no two adjacent
+blocks in the free list are both free.
+\end{theorem}
+\begin{proof}
+\textsc{Kfree} explicitly coalesces with both the predecessor and successor blocks.
+If either neighbor is free, the blocks are merged. Therefore, upon return from
+\textsc{Kfree}, the freed block has no free neighbor, maintaining the invariant.
+\textsc{Kmalloc} can only split a free block into (allocated, free), which cannot
+create adjacent free blocks.
+\end{proof}
+
+% =============================================================================
+% PART III: CRYPTOGRAPHIC PRIMITIVES
+% =============================================================================
+\part{Cryptographic Primitives}
+
+% =============================================================================
+\chapter{SHA-256}
+\label{ch:sha256}
+
+SHA-256 is the foundation of \VaultOS's integrity guarantees. It is used in HMAC for
+capability sealing and in key derivation for per-table encryption.
+
+\section{Merkle-Damg\r{a}rd Construction}
+
+SHA-256 follows the Merkle-Damg\r{a}rd paradigm: the message is padded to a multiple
+of 512 bits, then processed in 512-bit (64-byte) blocks. Each block is compressed into
+the running 256-bit state.
+
+\begin{definition}[SHA-256 State]
+The state consists of eight 32-bit words $H_0, \ldots, H_7$ initialized to the
+fractional parts of the square roots of the first eight primes:
+\[
+H_0 = \texttt{6a09e667},\quad H_1 = \texttt{bb67ae85},\quad \ldots,\quad
+H_7 = \texttt{5be0cd19}
+\]
+\end{definition}
+
+\section{Compression Function}
+
+\begin{algorithm}[H]
+\caption{\textsc{SHA256-Transform}($H[0..7]$, $\text{block}[0..63]$):
+Process one 512-bit block.}
+\label{alg:sha256}
+\tcp{Message schedule}
+\For{$i \leftarrow 0$ \To $15$}{
+  $W[i] \leftarrow$ big-endian 32-bit word from $\text{block}[4i \ldots 4i{+}3]$ \;
+}
+\For{$i \leftarrow 16$ \To $63$}{
+  $W[i] \leftarrow \sigma_1(W[i{-}2]) + W[i{-}7] + \sigma_0(W[i{-}15]) + W[i{-}16]$ \;
+}
+\tcp{Initialize working variables}
+$a,b,c,d,e,f,g,h \leftarrow H[0], H[1], \ldots, H[7]$ \;
+\tcp{Compression rounds}
+\For{$i \leftarrow 0$ \To $63$}{
+  $T_1 \leftarrow h + \Sigma_1(e) + \mathrm{Ch}(e,f,g) + K_i + W[i]$ \;
+  $T_2 \leftarrow \Sigma_0(a) + \mathrm{Maj}(a,b,c)$ \;
+  $h \leftarrow g;\; g \leftarrow f;\; f \leftarrow e;\; e \leftarrow d + T_1$ \;
+  $d \leftarrow c;\; c \leftarrow b;\; b \leftarrow a;\; a \leftarrow T_1 + T_2$ \;
+}
+\tcp{Update state}
+$H[i] \leftarrow H[i] + \{a,b,c,d,e,f,g,h\}_i$ for $i = 0,\ldots,7$ \;
+\end{algorithm}
+
+\noindent
+The mixing functions are defined as:
+\begin{align*}
+\mathrm{Ch}(x,y,z) &= (x \wedge y) \oplus (\neg x \wedge z) \\
+\mathrm{Maj}(x,y,z) &= (x \wedge y) \oplus (x \wedge z) \oplus (y \wedge z) \\
+\Sigma_0(x) &= \mathrm{ROTR}^2(x) \oplus \mathrm{ROTR}^{13}(x) \oplus \mathrm{ROTR}^{22}(x) \\
+\Sigma_1(x) &= \mathrm{ROTR}^6(x) \oplus \mathrm{ROTR}^{11}(x) \oplus \mathrm{ROTR}^{25}(x) \\
+\sigma_0(x) &= \mathrm{ROTR}^7(x) \oplus \mathrm{ROTR}^{18}(x) \oplus (x \gg 3) \\
+\sigma_1(x) &= \mathrm{ROTR}^{17}(x) \oplus \mathrm{ROTR}^{19}(x) \oplus (x \gg 10)
+\end{align*}
+
+\section{Block-Based Update}
+
+\begin{algorithm}[H]
+\caption{\textsc{SHA256-Update}(\text{ctx}, \text{data}, \text{len}):
+Incrementally feed data to the hash function.}
+\label{alg:sha256-update}
+$\text{buffered} \leftarrow \text{ctx.count} \bmod 64$ \;
+$\text{ctx.count} \leftarrow \text{ctx.count} + \text{len}$ \;
+\If{$\text{buffered} > 0$}{
+  $\text{need} \leftarrow 64 - \text{buffered}$ \;
+  \If{$\text{len} < \text{need}$}{
+    copy \text{data} to buffer at offset \text{buffered} \;
+    \Return \;
+  }
+  copy \text{need} bytes to complete buffer \;
+  \textsc{SHA256-Transform}(\text{ctx.state}, \text{ctx.buffer}) \;
+  advance data by \text{need};\; $\text{len} \leftarrow \text{len} - \text{need}$ \;
+}
+\While{$\text{len} \geq 64$}{
+  \textsc{SHA256-Transform}(\text{ctx.state}, \text{data}) \tcp*{process directly}
+  advance data by 64;\; $\text{len} \leftarrow \text{len} - 64$ \;
+}
+\If{$\text{len} > 0$}{
+  copy remaining \text{len} bytes to ctx.buffer \;
+}
+\end{algorithm}
+
+\begin{observation}
+The block-based update processes aligned 64-byte blocks directly from the input buffer,
+avoiding $64\times$ per-byte overhead compared to a na\"ive byte-at-a-time approach.
+For HMAC computation of a 64-byte ipad, this processes the entire block in a single
+call to \textsc{SHA256-Transform}.
+\end{observation}
+
+% =============================================================================
+\chapter{AES-128}
+\label{ch:aes}
+
+AES-128 provides confidentiality for all database records. \VaultOS{} implements both
+a software path with precomputed lookup tables and a hardware-accelerated path using
+AES-NI instructions.
+
+\section{Rijndael Cipher Structure}
+
+AES-128 operates on 128-bit (16-byte) blocks using a 128-bit key, performing 10 rounds
+of transformations on a $4 \times 4$ byte matrix called the \emph{state}.
+
+\begin{definition}[AES Round]
+Each round (except the last) applies four transformations:
+\[
+\text{Round}(s, k_r) = \textsc{AddRoundKey}\bigl(
+  \textsc{MixColumns}\bigl(
+    \textsc{ShiftRows}\bigl(
+      \textsc{SubBytes}(s)
+    \bigr)
+  \bigr), k_r\bigr)
+\]
+The final round omits \textsc{MixColumns}.
+\end{definition}
+
+\section{$\mathrm{GF}(2^8)$ Arithmetic and Precomputed Tables}
+
+The \textsc{MixColumns} step requires multiplication in $\mathrm{GF}(2^8)$ with the
+irreducible polynomial $x^8 + x^4 + x^3 + x + 1$ (= \hex{11B}).
+
+Rather than computing these multiplications at runtime (8 iterations per byte),
+\VaultOS{} uses six precomputed 256-byte lookup tables:
+
+\begin{center}
+\begin{tabular}{@{}cl@{}}
+\toprule
+\textbf{Table} & \textbf{Usage} \\
+\midrule
+$\text{mul2}[256]$ & \textsc{MixColumns}: $\{2\} \cdot x$ \\
+$\text{mul3}[256]$ & \textsc{MixColumns}: $\{3\} \cdot x$ \\
+$\text{mul9}[256]$ & \textsc{InvMixColumns}: $\{9\} \cdot x$ \\
+$\text{mul11}[256]$ & \textsc{InvMixColumns}: $\{b\} \cdot x$ \\
+$\text{mul13}[256]$ & \textsc{InvMixColumns}: $\{d\} \cdot x$ \\
+$\text{mul14}[256]$ & \textsc{InvMixColumns}: $\{e\} \cdot x$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+This replaces $48 \times 8 = 384$ loop iterations per block with 48 table lookups.
+
+\section{Algorithm: \textsc{AES-Key-Expand}}
+
+\begin{algorithm}[H]
+\caption{\textsc{AES-Key-Expand}($\text{key}[0..15]$): Expand 128-bit key to 11 round keys.}
+\label{alg:aes-key}
+$w[0..3] \leftarrow$ 32-bit words from key \;
+\For{$i \leftarrow 4$ \To $43$}{
+  $\text{temp} \leftarrow w[i-1]$ \;
+  \If{$i \bmod 4 = 0$}{
+    $\text{temp} \leftarrow \textsc{SubWord}(\textsc{RotWord}(\text{temp})) \oplus \text{Rcon}[i/4]$ \;
+  }
+  $w[i] \leftarrow w[i-4] \oplus \text{temp}$ \;
+}
+\end{algorithm}
+
+\section{Algorithm: \textsc{AES-Encrypt-Block}}
+
+\begin{algorithm}[H]
+\caption{\textsc{AES-Encrypt-Block}($\text{ctx}$, $\text{block}[0..15]$): Encrypt one 128-bit block.}
+\label{alg:aes-enc}
+\textsc{AddRoundKey}(block, $\text{ctx.rk}[0]$) \;
+\For{$r \leftarrow 1$ \To $9$}{
+  \textsc{SubBytes}(block) \tcp*{S-box lookup, 16 bytes}
+  \textsc{ShiftRows}(block) \tcp*{cyclic row rotations}
+  \textsc{MixColumns}(block) \tcp*{GF($2^8$) via lookup tables}
+  \textsc{AddRoundKey}(block, $\text{ctx.rk}[r]$) \;
+}
+\textsc{SubBytes}(block) \;
+\textsc{ShiftRows}(block) \;
+\textsc{AddRoundKey}(block, $\text{ctx.rk}[10]$) \;
+\end{algorithm}
+
+\section{CBC Mode}
+
+\begin{algorithm}[H]
+\caption{\textsc{AES-CBC-Encrypt}($\text{ctx}$, $\text{iv}$, $\text{pt}$, $\text{ct}$, $\text{len}$)}
+\label{alg:cbc-enc}
+$\text{prev} \leftarrow \text{iv}$ \;
+\For{$\text{off} \leftarrow 0$ \To $\text{len} - 16$ \textbf{step} $16$}{
+  \For{$i \leftarrow 0$ \To $15$}{
+    $\text{ct}[\text{off}+i] \leftarrow \text{pt}[\text{off}+i] \oplus \text{prev}[i]$ \;
+  }
+  \textsc{AES-Encrypt-Block}(\text{ctx}, $\text{ct} + \text{off}$) \;
+  $\text{prev} \leftarrow \text{ct} + \text{off}$ \tcp*{pointer, no copy}
+}
+\end{algorithm}
+
+\begin{observation}
+The CBC encrypt implementation avoids redundant \texttt{memcpy} by maintaining a
+pointer to the previous ciphertext block rather than copying it to a temporary buffer.
+This eliminates 2 of 3 \texttt{memcpy} calls per block.
+\end{observation}
+
+\section{AES-NI Hardware Acceleration}
+
+When the CPU supports AES-NI (detected via \texttt{CPUID.01H:ECX[25]}), \VaultOS{}
+dispatches to a hardware-accelerated path:
+
+\begin{lstlisting}[caption={AES-NI encrypt (inline assembly sketch).},language={[x86masm]Assembler}]
+movdqu  (%block), %xmm0      ; Load plaintext block
+pxor    0(%rk),   %xmm0      ; AddRoundKey 0
+aesenc  16(%rk),  %xmm0      ; Rounds 1-9 (9 instructions)
+aesenc  32(%rk),  %xmm0
+; ... (rounds 3-9) ...
+aesenclast 160(%rk), %xmm0   ; Final round
+movdqu  %xmm0,   (%block)    ; Store ciphertext
+\end{lstlisting}
+
+For decryption, each intermediate round key must be transformed via \texttt{AESIMC}
+(InvMixColumns) before use with \texttt{AESDEC}.
+
+\begin{table}[htb]
+\centering
+\caption{AES-128-CBC performance: 1\,KiB $\times$ 100 iterations.}
+\label{tab:aes-perf}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Operation} & \textbf{AES-NI (Haswell)} & \textbf{Software (Nehalem)} & \textbf{Speedup} \\
+\midrule
+Encrypt & 29{,}388 cycles/op  & 217{,}929 cycles/op  & $7.4\times$ \\
+Decrypt & 39{,}023 cycles/op  & 284{,}357 cycles/op  & $7.3\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{theorem}[CBC IND-CPA Security]
+\label{thm:cbc}
+AES-128-CBC with random IVs is IND-CPA secure (indistinguishable under chosen-plaintext
+attack) assuming AES is a pseudorandom permutation (PRP), up to $2^{64}$ blocks
+(the birthday bound on 128-bit blocks).
+\end{theorem}
+
+% =============================================================================
+\chapter{HMAC-SHA256 and Random Number Generation}
+\label{ch:hmac}
+
+\section{HMAC Construction}
+
+HMAC-SHA256 (RFC~2104) provides message authentication:
+\[
+\text{HMAC}(K, m) = \text{SHA256}\bigl((K \oplus \text{opad}) \;\|\;
+  \text{SHA256}((K \oplus \text{ipad}) \;\|\; m)\bigr)
+\]
+where $\text{ipad} = \texttt{0x36}^{64}$ and $\text{opad} = \texttt{0x5C}^{64}$.
+
+\section{Pre-computed Context}
+
+Since the master key $K$ is fixed at boot, \VaultOS{} pre-computes the SHA-256 state
+after processing the ipad and opad blocks:
+
+\begin{algorithm}[H]
+\caption{\textsc{HMAC-Init}($\text{ctx}$, $K$, $\text{klen}$): Pre-compute HMAC state for key $K$.}
+\label{alg:hmac-init}
+\If{$\text{klen} > 64$}{
+  $K' \leftarrow \textsc{SHA256}(K)$;\quad pad to 64 bytes with zeros \;
+}
+\Else{
+  $K' \leftarrow K$ padded to 64 bytes with zeros \;
+}
+$\text{ipad}[i] \leftarrow K'[i] \oplus \texttt{0x36}$ for $i = 0, \ldots, 63$ \;
+$\text{opad}[i] \leftarrow K'[i] \oplus \texttt{0x5C}$ for $i = 0, \ldots, 63$ \;
+$\text{ctx.inner\_base} \leftarrow \textsc{SHA256-Update}(\textsc{SHA256-Init}(), \text{ipad}, 64)$ \;
+$\text{ctx.outer\_base} \leftarrow \textsc{SHA256-Update}(\textsc{SHA256-Init}(), \text{opad}, 64)$ \;
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{\textsc{HMAC-Compute}($\text{ctx}$, $\text{data}$, $\text{len}$, $\text{mac}$):
+Compute HMAC using pre-computed context.}
+\label{alg:hmac-compute}
+$\text{inner} \leftarrow \text{clone}(\text{ctx.inner\_base})$ \;
+\textsc{SHA256-Update}(inner, data, len) \;
+\textsc{SHA256-Final}(inner, inner\_hash) \;
+$\text{outer} \leftarrow \text{clone}(\text{ctx.outer\_base})$ \;
+\textsc{SHA256-Update}(outer, inner\_hash, 32) \;
+\textsc{SHA256-Final}(outer, mac) \;
+\end{algorithm}
+
+\begin{observation}
+Pre-computing the HMAC context eliminates re-hashing the 128 bytes of ipad and opad
+for every HMAC computation. For capability validation (40-byte payload), this reduces
+SHA-256 block processing from 4 blocks to 2 blocks per HMAC---a $\sim\!3\times$ speedup.
+\end{observation}
+
+\section{Constant-Time Verification}
+
+\begin{algorithm}[H]
+\caption{\textsc{HMAC-Verify}($a[0..n{-}1]$, $b[0..n{-}1]$): Constant-time comparison.}
+\label{alg:hmac-verify}
+$\text{diff} \leftarrow 0$ \;
+\For{$i \leftarrow 0$ \To $n - 1$}{
+  $\text{diff} \leftarrow \text{diff} \;|\; (a[i] \oplus b[i])$ \;
+}
+\Return $\text{diff} = 0$ \;
+\end{algorithm}
+
+The OR-accumulation ensures the loop runs in exactly $n$ iterations regardless of where
+mismatches occur, preventing timing side-channel attacks.
+
+\section{Random Number Generation}
+
+\VaultOS{} seeds its entropy pool from the \texttt{RDRAND} instruction (when available)
+and falls back to \texttt{RDTSC}-based seeding with an xorshift128+ PRNG.
+
+\begin{theorem}[HMAC Unforgeability]
+Under the assumption that SHA-256 is a pseudorandom function (PRF) when keyed,
+HMAC-SHA256 is $(t, q, \epsilon)$-unforgeable: no adversary running in time $t$ and
+making $q$ queries can forge a valid MAC with probability greater than
+$\epsilon + q \cdot 2^{-256}$.
+\end{theorem}
+
+% =============================================================================
+% PART IV: DATA STRUCTURES
+% =============================================================================
+\part{Data Structures}
+
+% =============================================================================
+\chapter{B-Tree Index}
+\label{ch:btree}
+
+The database engine indexes every table with a B-tree of order $t = 64$,
+providing $\BigO(\log_{64} n)$ search, insert, and delete operations.
+
+\section{B-Tree Properties}
+
+\begin{definition}[B-Tree of Order $t$]
+A B-tree of order $t$ satisfies:
+\begin{enumerate}
+\item Every node has at most $2t - 1$ keys ($= 127$ for $t = 64$).
+\item Every non-root node has at least $t - 1$ keys ($= 63$).
+\item A node with $k$ keys has $k + 1$ children (if internal).
+\item All leaves appear at the same depth.
+\end{enumerate}
+\end{definition}
+
+\noindent
+In \VaultOS{}, BTREE\_ORDER = 64, so nodes store up to 63 keys and 64 child pointers.
+Each node occupies approximately $63 \times 8 + 63 \times 8 + 64 \times 8 + 8 = 1{,}520$
+bytes, fitting comfortably in L1 cache.
+
+\begin{remark}
+We use order-$t$ notation where the maximum number of keys per node is $t - 1 = 63$,
+consistent with the CLRS definition. Some references use $t$ for the maximum keys;
+ours uses $t$ for the minimum degree.
+\end{remark}
+
+\section{Node Structure}
+
+\begin{lstlisting}[caption={B-tree node structure.}]
+typedef struct btree_node {
+    uint64_t   keys[63];       /* sorted key array */
+    void      *values[63];     /* associated record pointers */
+    btree_node *children[64];  /* child pointers */
+    uint32_t   num_keys;
+    bool       is_leaf;
+} btree_node_t;
+\end{lstlisting}
+
+\section{Algorithm: \textsc{B-Tree-Search}}
+
+\begin{algorithm}[H]
+\caption{\textsc{B-Tree-Search}($x$, $k$): Search for key $k$ in subtree rooted at $x$.}
+\label{alg:btree-search}
+$i \leftarrow 0$ \;
+\While{$i < x.\field{num\_keys}$ \And $k > x.\field{keys}[i]$}{
+  $i \leftarrow i + 1$ \;
+}
+\If{$i < x.\field{num\_keys}$ \And $k = x.\field{keys}[i]$}{
+  \Return $x.\field{values}[i]$ \;
+}
+\If{$x.\field{is\_leaf}$}{
+  \Return \Nil \;
+}
+\Return \textsc{B-Tree-Search}($x.\field{children}[i]$, $k$) \;
+\end{algorithm}
+
+\section{Algorithm: \textsc{B-Tree-Insert}}
+
+\begin{algorithm}[H]
+\caption{\textsc{B-Tree-Insert}($T$, $k$, $v$): Insert key $k$ with value $v$ into B-tree $T$.}
+\label{alg:btree-insert}
+$r \leftarrow T.\field{root}$ \;
+\If{$r.\field{num\_keys} = 63$}{
+  $s \leftarrow$ new node (leaf $=$ \False) \;
+  $s.\field{children}[0] \leftarrow r$ \;
+  $T.\field{root} \leftarrow s$ \;
+  \textsc{B-Tree-Split-Child}($s$, $0$) \;
+  \textsc{B-Tree-Insert-Nonfull}($s$, $k$, $v$) \;
+}
+\Else{
+  \textsc{B-Tree-Insert-Nonfull}($r$, $k$, $v$) \;
+}
+\end{algorithm}
+
+\section{Algorithm: \textsc{B-Tree-Split-Child}}
+
+\begin{algorithm}[H]
+\caption{\textsc{B-Tree-Split-Child}($x$, $i$): Split full child $x.\field{children}[i]$.}
+\label{alg:btree-split}
+$y \leftarrow x.\field{children}[i]$ \tcp*{full child ($y.\field{num\_keys} = 63$)}
+$z \leftarrow$ new node ($z.\field{is\_leaf} \leftarrow y.\field{is\_leaf}$) \;
+$\text{mid} \leftarrow 31$ \tcp*{median index}
+\tcp{Copy upper half of $y$ to $z$}
+\For{$j \leftarrow 0$ \To $30$}{
+  $z.\field{keys}[j] \leftarrow y.\field{keys}[\text{mid}+1+j]$ \;
+  $z.\field{values}[j] \leftarrow y.\field{values}[\text{mid}+1+j]$ \;
+}
+\If{\Not $y.\field{is\_leaf}$}{
+  \For{$j \leftarrow 0$ \To $31$}{
+    $z.\field{children}[j] \leftarrow y.\field{children}[\text{mid}+1+j]$ \;
+  }
+}
+$z.\field{num\_keys} \leftarrow 31$ \;
+$y.\field{num\_keys} \leftarrow 31$ \;
+\tcp{Promote median key to parent}
+shift $x.\field{keys}[i..], x.\field{children}[i{+}1..]$ right by 1 \;
+$x.\field{keys}[i] \leftarrow y.\field{keys}[\text{mid}]$ \;
+$x.\field{values}[i] \leftarrow y.\field{values}[\text{mid}]$ \;
+$x.\field{children}[i+1] \leftarrow z$ \;
+$x.\field{num\_keys} \leftarrow x.\field{num\_keys} + 1$ \;
+\end{algorithm}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  bnode/.style={draw,thick,rounded corners=2pt,minimum height=0.6cm,
+    inner sep=3pt,font=\footnotesize},
+  level distance=1.5cm,
+  sibling distance=4cm,
+  edge from parent/.style={draw,thick,->,>=Stealth},
+]
+\node[bnode] (before) {$k_1 \;|\; k_2 \;|\; \cdots \;|\; k_{63}$}
+  [grow=down]
+  child { node[bnode] {child 0} }
+  child { node[bnode] {child 1} };
+\node[right=4cm of before,font=\Large] {$\Longrightarrow$};
+\node[bnode,right=6cm of before] (parent) {$k_{32}$}
+  [grow=down]
+  child { node[bnode] {$k_1 \;|\; \cdots \;|\; k_{31}$} }
+  child { node[bnode] {$k_{33} \;|\; \cdots \;|\; k_{63}$} };
+\node[above=0.3cm of before,font=\small\itshape] {Before split};
+\node[above=0.3cm of parent,font=\small\itshape] {After split};
+\end{tikzpicture}
+\caption{B-tree node split: the median key is promoted to the parent.}
+\label{fig:btree-split}
+\end{figure}
+
+\begin{theorem}[B-Tree Height Bound]
+\label{thm:btree-height}
+A B-tree of order $t = 64$ containing $n$ keys has height
+$h \leq \log_{64}\!\bigl(\frac{n+1}{2}\bigr)$.
+\end{theorem}
+\begin{proof}
+The minimum number of keys at depth $d$ is $2 \cdot 63^{d-1}$ for $d \geq 1$ (the root
+has at least 1 key, each other node at least 63). Summing gives
+$n \geq 1 + 2\sum_{i=1}^{h-1} 63^i = 2 \cdot 64^{h-1} - 1$, yielding
+$h \leq 1 + \log_{64}\!\bigl(\frac{n+1}{2}\bigr)$.
+\end{proof}
+
+\begin{corollary}
+For $n = 10^6$ keys, $h \leq 1 + \log_{64}(500{,}000) \approx 4.15$, so the tree has at
+most 5 levels. For $n = 10^3$ (typical VaultOS workload), $h \leq 3$.
+\end{corollary}
+
+% =============================================================================
+\chapter{Auxiliary Data Structures}
+\label{ch:aux}
+
+\section{Intrusive Doubly-Linked Lists}
+
+\VaultOS{} uses intrusive lists (the link node is embedded in the container structure)
+for the scheduler ready queue and process list.
+
+\begin{lstlisting}[caption={Intrusive list node and macros.}]
+typedef struct list_node {
+    struct list_node *next, *prev;
+} list_node_t;
+
+#define container_of(ptr, type, member) \
+    ((type *)((char *)(ptr) - offsetof(type, member)))
+\end{lstlisting}
+
+All list operations (insert head/tail, remove, iterate) run in $\BigO(1)$ time.
+
+\section{Bitmap Operations}
+
+The bitmap module provides bit-level operations used by the PMM:
+
+\begin{itemize}
+\item \textsc{Bitmap-Set}($B$, $i$): Set bit $i$ in $\BigO(1)$.
+\item \textsc{Bitmap-Clear}($B$, $i$): Clear bit $i$ in $\BigO(1)$.
+\item \textsc{Bitmap-Test}($B$, $i$): Test bit $i$ in $\BigO(1)$.
+\item \textsc{Bitmap-Find-Clear}($B$, $n$, $\text{start}$): Find first clear bit $\geq \text{start}$ in $\BigO(n/64)$.
+\end{itemize}
+
+\section{Ring Buffers}
+
+The keyboard driver and IPC subsystem use fixed-size circular buffers:
+
+\begin{definition}[Ring Buffer]
+A ring buffer of capacity $C$ uses indices $\text{head}$ and $\text{tail}$ in $[0, C)$.
+The buffer is empty when $\text{head} = \text{tail}$ and full when
+$(\text{head} + 1) \bmod C = \text{tail}$.
+Enqueue and dequeue are $\BigO(1)$.
+\end{definition}
+
+% =============================================================================
+% PART V: SECURITY ARCHITECTURE
+% =============================================================================
+\part{Security Architecture}
+
+% =============================================================================
+\chapter{Capability System}
+\label{ch:capabilities}
+
+\section{Capability Token Structure}
+
+Each capability is a 96-byte structure (Definition~\ref{sec:cap-model}) stored in a
+direct-indexed array of 1{,}024 slots. The capability ID serves as the array index
+(offset by 1), enabling $\BigO(1)$ lookup.
+
+\section{Algorithm: \textsc{Cap-Create}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Cap-Create}($\text{obj\_id}$, $\text{type}$, $\text{owner}$, $\text{rights}$, $\text{parent}$):
+Create and seal a new capability.}
+\label{alg:cap-create}
+$c.\field{cap\_id} \leftarrow \text{next\_cap\_id}$;\quad $\text{next\_cap\_id} \leftarrow \text{next\_cap\_id} + 1$ \;
+$c.\field{obj\_id} \leftarrow \text{obj\_id}$;\quad $c.\field{type} \leftarrow \text{type}$ \;
+$c.\field{owner} \leftarrow \text{owner}$;\quad $c.\field{rights} \leftarrow \text{rights}$ \;
+$c.\field{parent} \leftarrow \text{parent}$;\quad $c.\field{revoked} \leftarrow \False$ \;
+\tcp{Seal with HMAC}
+$\text{data} \leftarrow c.\field{cap\_id} \| c.\field{obj\_id} \| c.\field{owner} \| c.\field{rights} \| c.\field{type} \| c.\field{parent}$ \;
+$c.\field{hmac} \leftarrow \textsc{HMAC-Compute}(\text{master\_ctx}, \text{data}, 40)$ \;
+\Return $c$ \;
+\end{algorithm}
+
+\section{Algorithm: \textsc{Cap-Validate} with Cache}
+
+\begin{algorithm}[H]
+\caption{\textsc{Cap-Validate}($c$): Verify capability integrity using cache.}
+\label{alg:cap-validate}
+\If{$c.\field{revoked}$}{\Return \False}
+\If{$c.\field{expires\_at} \neq 0$ \And $\text{now} > c.\field{expires\_at}$}{\Return \False}
+\tcp{Check validation cache}
+$\text{idx} \leftarrow c.\field{cap\_id} \bmod 64$ \;
+\If{$\text{cache}[\text{idx}].\field{occupied}$ \And $\text{cache}[\text{idx}].\field{cap\_id} = c.\field{cap\_id}$
+    \And $\text{now} - \text{cache}[\text{idx}].\field{validated\_at} < 1000$}{
+  \Return $\text{cache}[\text{idx}].\field{valid}$ \tcp*{cache hit}
+}
+\tcp{Cache miss: recompute HMAC}
+$c' \leftarrow c$ \;
+\textsc{Cap-Compute-HMAC}($c'$) \;
+$\text{valid} \leftarrow \textsc{HMAC-Verify}(c.\field{hmac}, c'.\field{hmac}, 32)$ \;
+$\text{cache}[\text{idx}] \leftarrow (c.\field{cap\_id}, \text{now}, \text{valid}, \True)$ \;
+\Return valid \;
+\end{algorithm}
+
+\begin{observation}
+The validation cache uses a direct-mapped scheme with 64 entries and a 1-second TTL.
+Under typical workloads (repeated access to the same capabilities), this eliminates
+$\sim\!95\%$ of HMAC recomputations.
+\end{observation}
+
+\section{Algorithm: \textsc{Cap-Check}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Cap-Check}($\text{pid}$, $\text{obj\_id}$, $\text{required\_rights}$):
+Check if process has required rights on object.}
+\label{alg:cap-check}
+\If{$\text{pid} = 0$}{\Return \True \tcp*{kernel always authorized}}
+\For{$i \leftarrow 1$ \To $\text{next\_cap\_id} - 1$}{
+  $c \leftarrow \textsc{Cap-Table-Lookup}(i)$ \tcp*{$\BigO(1)$ direct index}
+  \If{$c = \Nil$ \Or $c.\field{owner} \neq \text{pid}$}{continue}
+  \If{$c.\field{obj\_id} \neq \text{obj\_id}$ \And $c.\field{type} \neq \const{System}$}{continue}
+  \If{$(c.\field{rights} \;\&\; \text{required\_rights}) \neq \text{required\_rights}$}{continue}
+  \If{\textsc{Cap-Validate}($c$)}{\Return \True}
+}
+\Return \False \;
+\end{algorithm}
+
+\section{Delegation and Revocation}
+
+\begin{algorithm}[H]
+\caption{\textsc{Cap-Revoke}($\text{owner\_pid}$, $\text{cap\_id}$): Revoke a capability
+and cascade to children.}
+\label{alg:cap-revoke}
+$c \leftarrow \textsc{Cap-Table-Lookup}(\text{cap\_id})$ \;
+\If{$c = \Nil$}{\Return \const{NotFound}}
+$c.\field{revoked} \leftarrow \True$ \;
+invalidate cache entry for cap\_id \;
+\tcp{Cascade: revoke all children}
+\For{$i \leftarrow 1$ \To $\text{next\_cap\_id} - 1$}{
+  $\text{child} \leftarrow \textsc{Cap-Table-Lookup}(i)$ \;
+  \If{$\text{child} \neq \Nil$ \And $\text{child}.\field{parent} = \text{cap\_id}$ \And \Not $\text{child}.\field{revoked}$}{
+    \textsc{Cap-Revoke}($\text{owner\_pid}$, $\text{child}.\field{cap\_id}$) \;
+  }
+}
+\end{algorithm}
+
+\begin{theorem}[Revocation Cascade Correctness]
+\label{thm:revoke}
+After \textsc{Cap-Revoke}($\text{pid}$, $c$), every capability $c'$ in the delegation
+subtree rooted at $c$ satisfies $c'.\field{revoked} = \True$.
+\end{theorem}
+\begin{proof}
+By structural induction on the delegation tree. The base case (leaf) is trivially
+revoked. For an internal node, the algorithm recursively revokes all children whose
+$\field{parent} = c.\field{cap\_id}$, covering the entire subtree.
+\end{proof}
+
+\section{Rights Model}
+
+Grant operations enforce the \emph{monotonic attenuation} property:
+
+\begin{property}[Monotonic Attenuation]
+If capability $c_p$ (parent) has rights $R_p$ and grants capability $c_c$ (child) with
+requested rights $R_c$, then $c_c.\field{rights} = R_c \cap R_p \subseteq R_p$.
+A child can never possess more rights than its parent.
+\end{property}
+
+% =============================================================================
+\chapter{Encrypted Database Engine}
+\label{ch:database}
+
+\section{Per-Table Key Derivation}
+
+Each table receives a unique AES-128 key derived from the master database key:
+
+\begin{algorithm}[H]
+\caption{\textsc{Derive-Table-Key}($\text{table\_id}$): Derive AES key for table encryption.}
+\label{alg:derive-key}
+$\text{id\_buf}[0..3] \leftarrow$ 32-bit encoding of table\_id \;
+$\text{derived}[0..31] \leftarrow \textsc{HMAC-SHA256}(K_{\text{master}}, \text{id\_buf}, 4)$ \;
+$\textsc{AES-Init}(\text{table\_ctx}[\text{table\_id}], \text{derived}[0..15])$ \tcp*{first 16 bytes}
+\end{algorithm}
+
+\section{Query Execution Pipeline}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,thick,rounded corners=3pt,minimum width=2.2cm,
+    minimum height=0.7cm,font=\sffamily\footnotesize,fill=blue!8},
+  arr/.style={->,>=Stealth,thick},
+]
+\node[box]                       (tok) {Tokenize};
+\node[box,right=0.5cm of tok]    (par) {Parse};
+\node[box,right=0.5cm of par]    (cap) {Cap Check};
+\node[box,right=0.5cm of cap]    (exe) {Execute};
+\node[box,right=0.5cm of exe]    (enc) {Encrypt};
+\node[box,right=0.5cm of enc]    (res) {Result};
+\draw[arr] (tok) -- (par);
+\draw[arr] (par) -- (cap);
+\draw[arr] (cap) -- (exe);
+\draw[arr] (exe) -- (enc);
+\draw[arr] (enc) -- (res);
+\end{tikzpicture}
+\caption{Query execution pipeline. Capability checks occur before any data access.}
+\label{fig:query-pipeline}
+\end{figure}
+
+% =============================================================================
+\chapter{Query Parser}
+\label{ch:query}
+
+\section{SQL Subset Grammar}
+
+The parser accepts the following BNF grammar:
+
+\begin{lstlisting}[language={},frame=none,numbers=none,
+  basicstyle=\ttfamily\small,xleftmargin=0em]
+<query>   ::= <select> | <insert> | <delete> | <update>
+            | <show> | <describe> | <grant> | <revoke>
+<select>  ::= SELECT <cols> FROM <ident> [WHERE <conds>]
+<insert>  ::= INSERT INTO <ident> (<cols>) VALUES (<vals>)
+<delete>  ::= DELETE FROM <ident> [WHERE <conds>]
+<update>  ::= UPDATE <ident> SET <assigns> [WHERE <conds>]
+<show>    ::= SHOW TABLES
+<describe>::= DESCRIBE <ident>
+<grant>   ::= GRANT <rights> ON <number> TO <number>
+<revoke>  ::= REVOKE <number>
+<conds>   ::= <cond> [AND <cond>]*
+<cond>    ::= <ident> <op> <value>
+<op>      ::= '=' | '!=' | '<' | '>' | '<=' | '>='
+\end{lstlisting}
+
+\section{Recursive-Descent Parser}
+
+The parser uses a hand-written recursive-descent approach with a single-token lookahead.
+Each non-terminal in the grammar maps to a function:
+
+\begin{itemize}
+\item \textsc{Parse-Select}(): handles \texttt{SELECT} queries
+\item \textsc{Parse-Insert}(): handles \texttt{INSERT INTO} queries
+\item \textsc{Parse-Where}(): parses \texttt{WHERE} clause conditions
+\item \textsc{Next-Token}(): lexical scanner producing token + value pairs
+\end{itemize}
+
+\begin{theorem}[Parser Correctness]
+The recursive-descent parser accepts exactly the language defined by the grammar above,
+rejecting all other inputs with a syntax error containing the offending token position.
+\end{theorem}
+
+The parser runs in $\BigO(m)$ time where $m$ is the query string length, since each
+character is examined at most once by the tokenizer, and each token is consumed exactly
+once by the parser.
+
+% =============================================================================
+% PART VI: PROCESS MANAGEMENT
+% =============================================================================
+\part{Process Management}
+
+% =============================================================================
+\chapter{Processes and Scheduling}
+\label{ch:scheduler}
+
+\section{Process Control Block}
+
+\begin{lstlisting}[caption={Process structure (simplified).}]
+typedef struct process {
+    uint64_t      pid;
+    char          name[64];
+    proc_state_t  state;
+    context_t     context;      /* CPU: rsp, rip, cr3, regs */
+    uint64_t      stack_base;   /* 64 KiB kernel stack */
+    uint64_t      cap_root;     /* root capability ID */
+    list_node_t   sched_node;   /* scheduler queue link */
+} process_t;
+\end{lstlisting}
+
+\section{Process State Transitions}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  state/.style={draw,thick,circle,minimum size=1.5cm,font=\sffamily\footnotesize},
+  arr/.style={->,>=Stealth,thick},
+  lab/.style={font=\footnotesize\itshape,above,sloped},
+]
+\node[state,fill=yellow!20]    (R) {Ready};
+\node[state,fill=green!20,right=3cm of R] (U) {Running};
+\node[state,fill=orange!20,below=2cm of U] (B) {Blocked};
+\node[state,fill=red!15,left=3cm of B]  (T) {Terminated};
+
+\draw[arr] (R) -- node[lab] {scheduled} (U);
+\draw[arr] (U) -- node[lab] {preempted} (R);
+\draw[arr] (U) -- node[lab,below,sloped] {I/O wait} (B);
+\draw[arr] (B) -- node[lab,below,sloped] {I/O done} (R);
+\draw[arr] (U) -- node[lab] {exit} (T);
+\end{tikzpicture}
+\caption{Process state transition diagram.}
+\label{fig:proc-states}
+\end{figure}
+
+\section{Algorithm: \textsc{Round-Robin-Schedule}}
+
+\begin{algorithm}[H]
+\caption{\textsc{Schedule}(): Select the next process to run.}
+\label{alg:schedule}
+\If{ready\_queue is empty}{\Return}
+$\text{next} \leftarrow$ dequeue from head of ready\_queue \;
+\If{$\text{next} = \text{current\_process}$}{\Return}
+\If{$\text{current\_process}.\field{state} = \const{Running}$}{
+  $\text{current\_process}.\field{state} \leftarrow \const{Ready}$ \;
+  enqueue current\_process at tail of ready\_queue \;
+}
+$\text{next}.\field{state} \leftarrow \const{Running}$ \;
+set TSS.RSP0 to next's kernel stack top \;
+$\text{old} \leftarrow \text{current\_process}$ \;
+$\text{current\_process} \leftarrow \text{next}$ \;
+\textsc{Context-Switch}($\&\text{old}.\field{context}$, $\&\text{next}.\field{context}$) \;
+\end{algorithm}
+
+\begin{property}[Fairness]
+With a timeslice of 10 ticks (10\,ms) and $n$ ready processes, each process receives
+at least $\lfloor 1000 / (10n) \rfloor$ scheduling quanta per second, ensuring bounded
+response time of $10n$\,ms in the worst case.
+\end{property}
+
+\section{Context Switching}
+
+The context switch saves and restores only callee-saved registers (per the System~V
+AMD64 ABI): \reg{rbx}, \reg{rbp}, \reg{r12}--\reg{r15}, \reg{rsp}, \reg{rip},
+and \reg{cr3} (page table base).
+
+\begin{lstlisting}[caption={Context switch (x86-64 assembly, simplified).},
+  language={[x86masm]Assembler}]
+context_switch:
+    ; Save old context (rdi = &old_ctx)
+    mov [rdi+0x00], rbx
+    mov [rdi+0x08], rbp
+    mov [rdi+0x10], r12
+    ; ... save r13-r15, rsp, rip, cr3 ...
+
+    ; Load new context (rsi = &new_ctx)
+    mov cr3, [rsi+0x48]     ; switch page tables
+    mov rbx, [rsi+0x00]
+    mov rbp, [rsi+0x08]
+    mov rsp, [rsi+0x38]
+    ; ... restore r12-r15 ...
+    jmp [rsi+0x40]          ; resume at new rip
+\end{lstlisting}
+
+% =============================================================================
+\chapter{Inter-Process Communication}
+\label{ch:ipc}
+
+\section{Message-Passing Model}
+
+\VaultOS{} uses asynchronous message passing instead of shared memory or pipes.
+Messages are stored in a circular buffer and recorded in the \texttt{MessageTable}
+for auditing.
+
+\section{Message Queue}
+
+\begin{definition}[IPC Message]
+An IPC message is a tuple:
+\[
+m = (\text{msg\_id},\; \text{src\_pid},\; \text{dst\_pid},\;
+     \text{type},\; \text{payload}[0..511],\; \text{timestamp})
+\]
+with a maximum payload of 512 bytes.
+\end{definition}
+
+The message queue has capacity $C = 64$ messages.
+
+\section{Algorithms: \textsc{IPC-Send} and \textsc{IPC-Recv}}
+
+\begin{algorithm}[H]
+\caption{\textsc{IPC-Send}($\text{src}$, $\text{dst}$, $\text{type}$, $\text{payload}$, $\text{len}$): Send a message.}
+$\text{next\_head} \leftarrow (\text{head} + 1) \bmod C$ \;
+\If{$\text{next\_head} = \text{tail}$}{\Return \const{Full}}
+$\text{queue}[\text{head}] \leftarrow (++\text{msg\_id}, \text{src}, \text{dst}, \text{type}, \text{payload}, \text{now})$ \;
+$\text{head} \leftarrow \text{next\_head}$ \;
+\Return \const{Ok} \;
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{\textsc{IPC-Recv}($\text{pid}$): Receive first message addressed to $\text{pid}$.}
+\For{$i \leftarrow \text{tail}$ \To $\text{head} - 1$ (modular)}{
+  \If{$\text{queue}[i].\field{dst\_pid} = \text{pid}$}{
+    $m \leftarrow \text{queue}[i]$ \;
+    remove entry $i$ from queue (shift left) \;
+    \Return $m$ \;
+  }
+}
+\Return \Nil \tcp*{no messages}
+\end{algorithm}
+
+% =============================================================================
+% PART VII: HARDWARE ABSTRACTION
+% =============================================================================
+\part{Hardware Abstraction}
+
+% =============================================================================
+\chapter{x86-64 Architecture Support}
+\label{ch:x86}
+
+\section{GDT and TSS Configuration}
+
+The Global Descriptor Table contains 7 entries:
+
+\begin{center}
+\begin{tabular}{@{}clcc@{}}
+\toprule
+\textbf{Selector} & \textbf{Segment} & \textbf{DPL} & \textbf{Type} \\
+\midrule
+\hex{00} & Null       & -- & -- \\
+\hex{08} & Kernel Code & 0 & 64-bit, exec, read \\
+\hex{10} & Kernel Data & 0 & read/write \\
+\hex{18} & User Data   & 3 & read/write \\
+\hex{20} & User Code   & 3 & 64-bit, exec, read \\
+\hex{28} & TSS (low)   & 0 & 64-bit TSS \\
+\hex{30} & TSS (high)  & -- & upper 32 bits of TSS base \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The TSS provides the \reg{RSP0} field used by the CPU when transitioning from Ring~3 to
+Ring~0 on interrupts.
+
+\section{Interrupt Handling}
+
+The IDT contains 48 active entries: 32 CPU exceptions (vectors 0--31) and 16 hardware
+IRQs (vectors 32--47). Each ISR stub follows the protocol:
+
+\begin{enumerate}
+\item Push dummy error code (if CPU did not push one).
+\item Push vector number.
+\item Push all 15 general-purpose registers.
+\item Call \texttt{isr\_handler(interrupt\_frame\_t *frame)} in C.
+\item Restore registers and execute \texttt{iretq}.
+\end{enumerate}
+
+\section{8259 PIC Initialization}
+
+The dual 8259 PICs are remapped so that IRQ~0--7 map to vectors 32--39 and IRQ~8--15
+map to vectors 40--47, avoiding conflicts with CPU exception vectors 0--31.
+
+\section{SYSCALL/SYSRET Interface}
+
+The SYSCALL mechanism uses three MSRs:
+\begin{itemize}
+\item \textbf{LSTAR} (\hex{C0000082}): kernel entry point address.
+\item \textbf{STAR} (\hex{C0000081}): segment selectors (kernel CS/SS in bits 47:32, user CS/SS in bits 63:48).
+\item \textbf{SFMASK} (\hex{C0000084}): flags to clear on SYSCALL (IF, TF).
+\end{itemize}
+
+The syscall calling convention passes the syscall number in \reg{rax} and arguments in
+\reg{rdi}, \reg{rsi}, \reg{rdx}, \reg{r10}, \reg{r8}.
+
+\section{CPUID Feature Detection}
+
+\VaultOS{} queries \texttt{CPUID} leaf 1 to detect:
+\begin{itemize}
+\item \textbf{AES-NI}: ECX bit 25 --- enables hardware AES acceleration.
+\item \textbf{SSE4.2}: ECX bit 20 --- available via \texttt{-march=x86-64-v2}.
+\item \textbf{RDRAND}: ECX bit 30 --- hardware random number generation.
+\end{itemize}
+
+% =============================================================================
+\chapter{Device Drivers}
+\label{ch:drivers}
+
+\section{Serial Port (COM1)}
+
+The serial driver communicates at 115{,}200 baud via I/O port \hex{3F8}.
+It provides \texttt{serial\_putchar()} and \texttt{serial\_write()} for debug output,
+which is mirrored by \texttt{kprintf()} to both serial and framebuffer.
+
+\section{GOP Framebuffer}
+
+The UEFI Graphics Output Protocol (GOP) provides a linear framebuffer. The driver
+renders text using an 8$\times$16 bitmap font, maintaining a cursor position and
+supporting scroll via \texttt{memmove} of the framebuffer contents.
+
+\begin{definition}[Text Grid]
+For a framebuffer of $W \times H$ pixels with an $8 \times 16$ font, the text grid has
+$\lfloor W/8 \rfloor$ columns and $\lfloor H/16 \rfloor$ rows. At $1024 \times 768$:
+128 columns $\times$ 48 rows $= 6{,}144$ character cells.
+\end{definition}
+
+\section{PS/2 Keyboard}
+
+The keyboard driver processes Scan Code Set~1, converting scancodes to ASCII via a
+128-entry lookup table. It handles Shift and Caps Lock modifiers and buffers input in
+a 256-byte ring buffer for consumption by \texttt{keyboard\_getchar()}.
+
+\section{8$\times$16 Bitmap Font}
+
+The font data is a compile-time constant: 256 glyphs $\times$ 16 bytes per glyph $=
+4{,}096$ bytes. Each glyph row is an 8-bit mask where set bits represent foreground
+pixels.
+
+% =============================================================================
+% APPENDICES
+% =============================================================================
+\appendix
+
+\chapter{Virtual Address Space Map}
+\label{app:vas}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Virtual Address Range} & \textbf{Purpose} \\
+\midrule
+\texttt{0x0000000000200000} -- \texttt{0x00007FFFFFFFE000} & User process code and stack \\
+\texttt{0xFFFFFFFF80000000} -- \texttt{0xFFFFFFFF81FFFFFF} & Kernel code and data (2\,MiB) \\
+\texttt{0xFFFFFFFF82000000} -- \texttt{0xFFFFFFFF91FFFFFF} & Kernel heap (256\,MiB) \\
+\texttt{0xFFFFFFFF92000000} -- \texttt{0xFFFFFFFFBFFFFFFF} & Physical memory direct map \\
+\texttt{0xFFFFFFFFC0000000} -- \texttt{0xFFFFFFFFCFFFFFFF} & Framebuffer \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\chapter{Syscall Number Table}
+\label{app:syscalls}
+
+\begin{center}
+\begin{tabular}{@{}cll@{}}
+\toprule
+\textbf{Number} & \textbf{Name} & \textbf{Description} \\
+\midrule
+0 & \texttt{SYS\_DB\_QUERY} & Execute database query \\
+1 & \texttt{SYS\_DB\_INSERT} & Insert record \\
+2 & \texttt{SYS\_DB\_DELETE} & Delete record \\
+3 & \texttt{SYS\_DB\_UPDATE} & Update record \\
+10 & \texttt{SYS\_CAP\_GRANT} & Grant capability \\
+11 & \texttt{SYS\_CAP\_REVOKE} & Revoke capability \\
+12 & \texttt{SYS\_CAP\_DELEGATE} & Delegate capability \\
+13 & \texttt{SYS\_CAP\_LIST} & List capabilities \\
+20 & \texttt{SYS\_PROC\_CREATE} & Create process \\
+21 & \texttt{SYS\_PROC\_EXIT} & Terminate process \\
+22 & \texttt{SYS\_PROC\_INFO} & Query process info \\
+30 & \texttt{SYS\_IPC\_SEND} & Send IPC message \\
+31 & \texttt{SYS\_IPC\_RECV} & Receive IPC message \\
+40 & \texttt{SYS\_IO\_READ} & Read I/O \\
+41 & \texttt{SYS\_IO\_WRITE} & Write I/O \\
+50 & \texttt{SYS\_INFO} & System information \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\chapter{Error Code Reference}
+\label{app:errors}
+
+\begin{center}
+\begin{tabular}{@{}cll@{}}
+\toprule
+\textbf{Code} & \textbf{Name} & \textbf{Description} \\
+\midrule
+0   & \texttt{VOS\_OK}              & Success \\
+$-1$ & \texttt{VOS\_ERR\_GENERIC}   & Generic error \\
+$-2$ & \texttt{VOS\_ERR\_NOMEM}     & Out of memory \\
+$-3$ & \texttt{VOS\_ERR\_INVAL}     & Invalid argument \\
+$-4$ & \texttt{VOS\_ERR\_NOTFOUND}  & Record not found \\
+$-5$ & \texttt{VOS\_ERR\_PERM}      & Permission denied \\
+$-6$ & \texttt{VOS\_ERR\_EXISTS}    & Already exists \\
+$-7$ & \texttt{VOS\_ERR\_FULL}      & Table/resource full \\
+$-8$ & \texttt{VOS\_ERR\_SYNTAX}    & Query syntax error \\
+$-9$ & \texttt{VOS\_ERR\_CAP\_INVALID} & HMAC verification failed \\
+$-10$ & \texttt{VOS\_ERR\_CAP\_EXPIRED} & Capability expired \\
+$-11$ & \texttt{VOS\_ERR\_CAP\_REVOKED} & Capability revoked \\
+$-12$ & \texttt{VOS\_ERR\_TXN\_ABORT}  & Transaction aborted \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\chapter{Performance Benchmarks}
+\label{app:benchmarks}
+
+Measured on QEMU with 100 iterations per benchmark:
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Haswell (AES-NI)} & \textbf{Nehalem (SW)} & \textbf{Speedup} \\
+\midrule
+AES-CBC encrypt 1\,KiB  & 29{,}388 cyc/op  & 217{,}929 cyc/op  & $7.4\times$ \\
+AES-CBC decrypt 1\,KiB  & 39{,}023 cyc/op  & 284{,}357 cyc/op  & $7.3\times$ \\
+SHA-256 1\,KiB           & 74{,}381 cyc/op  & 67{,}679 cyc/op   & $1.0\times$ \\
+HMAC-SHA256 40\,B        & 21{,}109 cyc/op  & 21{,}201 cyc/op   & $1.0\times$ \\
+\textsc{Cap-Check}       & 2{,}560 cyc/op   & 2{,}466 cyc/op    & $1.0\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The AES-NI hardware acceleration provides a $7.3$--$7.4\times$ speedup for database
+record encryption and decryption. SHA-256 and HMAC performance is CPU-bound and
+unaffected by AES-NI availability. Capability validation (\textsc{Cap-Check}) benefits
+primarily from the validation cache, not hardware acceleration.
+
+\end{document}

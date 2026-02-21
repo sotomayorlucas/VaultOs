@@ -1,5 +1,8 @@
 #include "heap.h"
 #include "memory_layout.h"
+#include "pmm.h"
+#include "paging.h"
+#include "vmm.h"
 #include "../lib/string.h"
 #include "../lib/printf.h"
 #include "../lib/assert.h"
@@ -128,6 +131,61 @@ void *krealloc(void *ptr, size_t new_size) {
         kfree(ptr);
     }
     return new_ptr;
+}
+
+int heap_expand(size_t bytes) {
+    if (bytes == 0) return 0;
+
+    /* Check we won't exceed the virtual address space reserved for heap */
+    if (heap_total_size + bytes > KERNEL_HEAP_SIZE) {
+        kprintf("[HEAP] Cannot expand: would exceed max heap size\n");
+        return -1;
+    }
+
+    size_t num_pages = ALIGN_UP(bytes, PAGE_SIZE) / PAGE_SIZE;
+    uint64_t phys = pmm_alloc_pages(num_pages);
+    if (!phys) {
+        kprintf("[HEAP] Cannot expand: out of physical memory\n");
+        return -1;
+    }
+
+    uint64_t virt_start = KERNEL_HEAP_BASE + heap_total_size;
+    uint64_t pml4 = vmm_get_kernel_pml4();
+
+    paging_map_range(pml4, virt_start, phys, num_pages,
+                     PTE_PRESENT | PTE_WRITABLE | PTE_NX);
+
+    /* Create a new free block at the expansion region */
+    size_t expand_size = num_pages * PAGE_SIZE;
+    heap_block_t *new_block = (heap_block_t *)virt_start;
+    new_block->magic = HEAP_MAGIC;
+    new_block->size = expand_size - sizeof(heap_block_t);
+    new_block->free = true;
+    new_block->next = NULL;
+    new_block->prev = NULL;
+
+    /* Find the last block in the list and link it */
+    heap_block_t *last = heap_head;
+    while (last->next) last = last->next;
+
+    last->next = new_block;
+    new_block->prev = last;
+
+    heap_total_size += expand_size;
+
+    /* Try to coalesce with previous block if it's free and adjacent */
+    if (last->free) {
+        uint8_t *last_end = (uint8_t *)last + sizeof(heap_block_t) + last->size;
+        if (last_end == (uint8_t *)new_block) {
+            last->size += sizeof(heap_block_t) + new_block->size;
+            last->next = new_block->next;
+            if (new_block->next) new_block->next->prev = last;
+        }
+    }
+
+    kprintf("[HEAP] Expanded by %llu KiB (total: %llu KiB)\n",
+            expand_size / 1024, heap_total_size / 1024);
+    return 0;
 }
 
 size_t heap_used(void) { return heap_used_bytes; }

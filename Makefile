@@ -16,11 +16,13 @@ BUILD    = build
 KERNEL   = kernel
 BOOT     = boot
 VSHELL   = shell
+GUI      = gui
 INCLUDE  = include
 
 # Compiler flags (freestanding kernel)
 CFLAGS   = -ffreestanding -nostdlib -nostdinc -fno-builtin \
            -fno-stack-protector -mno-red-zone -mcmodel=large \
+           -march=x86-64-v2 -mtune=generic -funroll-loops \
            -Wall -Wextra -Wno-unused-parameter -O2 -g \
            -I$(KERNEL) -I$(INCLUDE) -I.
 
@@ -62,6 +64,7 @@ KERNEL_C_SRCS = \
 	$(KERNEL)/drivers/framebuffer.c \
 	$(KERNEL)/drivers/font.c \
 	$(KERNEL)/drivers/keyboard.c \
+	$(KERNEL)/drivers/mouse.c \
 	$(KERNEL)/crypto/random.c \
 	$(KERNEL)/crypto/sha256.c \
 	$(KERNEL)/crypto/hmac.c \
@@ -78,7 +81,16 @@ KERNEL_C_SRCS = \
 	$(KERNEL)/proc/ipc.c \
 	$(VSHELL)/shell_main.c \
 	$(VSHELL)/line_editor.c \
-	$(VSHELL)/display.c
+	$(VSHELL)/display.c \
+	$(VSHELL)/tui.c \
+	$(VSHELL)/history.c \
+	$(VSHELL)/complete.c \
+	$(GUI)/graphics.c \
+	$(GUI)/event.c \
+	$(GUI)/window.c \
+	$(GUI)/compositor.c \
+	$(GUI)/widgets.c \
+	$(GUI)/desktop.c
 
 # Kernel ASM sources
 KERNEL_ASM_SRCS = \
@@ -117,6 +129,7 @@ dirs:
 	@mkdir -p $(BUILD)/$(KERNEL)/db
 	@mkdir -p $(BUILD)/$(KERNEL)/proc
 	@mkdir -p $(BUILD)/$(VSHELL)
+	@mkdir -p $(BUILD)/$(GUI)
 	@mkdir -p $(BUILD)/$(BOOT)
 
 # ============ UEFI Bootloader ============
@@ -156,6 +169,10 @@ $(BUILD)/$(VSHELL)/%.o: $(VSHELL)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/$(GUI)/%.o: $(GUI)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # NASM assembly
 $(BUILD)/%.o: %.asm
 	@mkdir -p $(dir $@)
@@ -179,6 +196,7 @@ disk: $(KERNEL_BIN) $(BOOTLOADER)
 
 run: disk
 	qemu-system-x86_64 \
+		-cpu Haswell \
 		-bios $(OVMF) \
 		-drive file=$(DISK_IMG),format=raw \
 		-m 256M \
@@ -188,6 +206,7 @@ run: disk
 
 debug: disk
 	qemu-system-x86_64 \
+		-cpu Haswell \
 		-bios $(OVMF) \
 		-drive file=$(DISK_IMG),format=raw \
 		-m 256M \

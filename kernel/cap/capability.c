@@ -8,10 +8,32 @@
 
 /* Master key for capability HMAC - generated once at boot */
 static uint8_t master_key[32];
+static hmac_ctx_t master_hmac_ctx;  /* Pre-computed HMAC state for master_key */
 static uint64_t next_cap_id = 1;
+
+/* Validation cache: avoids recomputing HMAC for recently validated caps */
+#define CAP_CACHE_SIZE 64
+#define CAP_CACHE_TTL  1000  /* ticks of validity (~1 second) */
+
+typedef struct {
+    uint64_t cap_id;
+    uint64_t validated_at;
+    bool     valid;
+    bool     occupied;
+} cap_cache_entry_t;
+
+static cap_cache_entry_t cap_cache[CAP_CACHE_SIZE];
+
+static void cap_cache_invalidate(uint64_t cap_id) {
+    uint64_t idx = cap_id % CAP_CACHE_SIZE;
+    if (cap_cache[idx].cap_id == cap_id)
+        cap_cache[idx].occupied = false;
+}
 
 void cap_init(void) {
     random_bytes(master_key, sizeof(master_key));
+    hmac_ctx_init(&master_hmac_ctx, master_key, sizeof(master_key));
+    memset(cap_cache, 0, sizeof(cap_cache));
     cap_table_init();
 
     /* Create root capability (system-wide, all rights) */
@@ -21,9 +43,8 @@ void cap_init(void) {
     kprintf("[CAP] Capability system initialized (root cap_id=%llu)\n", root.cap_id);
 }
 
-/* Compute HMAC for a capability (seals the token) */
+/* Compute HMAC for a capability using pre-computed master key context */
 static void cap_compute_hmac(capability_t *cap) {
-    /* HMAC input: cap_id | object_id | owner_pid | rights | object_type */
     uint8_t data[40];
     memcpy(data + 0,  &cap->cap_id, 8);
     memcpy(data + 8,  &cap->object_id, 8);
@@ -33,7 +54,7 @@ static void cap_compute_hmac(capability_t *cap) {
     memcpy(data + 28, &otype, 4);
     memcpy(data + 32, &cap->parent_cap_id, 8);
 
-    hmac_sha256(master_key, sizeof(master_key), data, sizeof(data), cap->hmac);
+    hmac_ctx_compute(&master_hmac_ctx, data, sizeof(data), cap->hmac);
 }
 
 capability_t cap_create(uint64_t object_id, cap_object_type_t type,
@@ -60,11 +81,27 @@ bool cap_validate(const capability_t *cap) {
     if (cap->revoked) return false;
     if (cap->expires_at != 0 && pit_get_ticks() > cap->expires_at) return false;
 
-    /* Verify HMAC */
+    /* Check validation cache first */
+    uint64_t idx = cap->cap_id % CAP_CACHE_SIZE;
+    uint64_t now = pit_get_ticks();
+    if (cap_cache[idx].occupied &&
+        cap_cache[idx].cap_id == cap->cap_id &&
+        (now - cap_cache[idx].validated_at) < CAP_CACHE_TTL) {
+        return cap_cache[idx].valid;
+    }
+
+    /* Cache miss: verify HMAC */
     capability_t tmp = *cap;
     cap_compute_hmac(&tmp);
+    bool valid = hmac_verify(cap->hmac, tmp.hmac, 32);
 
-    return hmac_verify(cap->hmac, tmp.hmac, 32);
+    /* Update cache */
+    cap_cache[idx].cap_id = cap->cap_id;
+    cap_cache[idx].validated_at = now;
+    cap_cache[idx].valid = valid;
+    cap_cache[idx].occupied = true;
+
+    return valid;
 }
 
 bool cap_check(uint64_t pid, uint64_t object_id, uint32_t required_rights) {
@@ -106,6 +143,7 @@ int cap_revoke(uint64_t owner_pid, uint64_t cap_id) {
     if (cap->owner_pid != owner_pid && owner_pid != 0) return VOS_ERR_PERM;
 
     cap->revoked = true;
+    cap_cache_invalidate(cap_id);
 
     /* Cascade: revoke all capabilities whose parent is this cap */
     for (uint64_t i = 1; i < next_cap_id; i++) {
@@ -126,6 +164,7 @@ int cap_delegate(uint64_t from_pid, uint64_t cap_id, uint64_t to_pid) {
 
     cap->owner_pid = to_pid;
     cap_compute_hmac(cap); /* Re-seal with new owner */
+    cap_cache_invalidate(cap_id);
     return VOS_OK;
 }
 

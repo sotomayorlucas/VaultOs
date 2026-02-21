@@ -13,8 +13,10 @@ static char kb_buffer[KB_BUFFER_SIZE];
 static volatile uint16_t kb_head = 0;
 static volatile uint16_t kb_tail = 0;
 
-static bool shift_pressed = false;
+static volatile bool shift_pressed = false;
+static volatile bool ctrl_pressed = false;
 static bool caps_lock = false;
+static bool e0_prefix = false;
 
 /* Scancode Set 1 to ASCII (US layout) */
 static const char scancode_to_ascii[128] = {
@@ -25,8 +27,10 @@ static const char scancode_to_ascii[128] = {
     'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',     /* 0x20-0x27 */
     '\'', '`', 0, '\\', 'z', 'x', 'c', 'v',     /* 0x28-0x2F */
     'b', 'n', 'm', ',', '.', '/', 0, '*',         /* 0x30-0x37 */
-    0, ' ', 0, 0, 0, 0, 0, 0,                     /* 0x38-0x3F */
-    0, 0, 0, 0, 0, 0, 0, '7',                     /* 0x40-0x47 */
+    0, ' ', 0,                                     /* 0x38-0x3A: Alt, Space, CapsLock */
+    KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,        /* 0x3B-0x3F */
+    KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10,       /* 0x40-0x44 */
+    0, 0, '7',                                     /* 0x45-0x47: NumLock, ScrollLock, KP7 */
     '8', '9', '-', '4', '5', '6', '+', '1',       /* 0x48-0x4F */
     '2', '3', '0', '.', 0, 0, 0, 0,               /* 0x50-0x57 */
     0, 0, 0, 0, 0, 0, 0, 0,                       /* 0x58-0x5F */
@@ -44,15 +48,30 @@ static const char scancode_to_ascii_shift[128] = {
     'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
     '"', '~', 0, '|', 'Z', 'X', 'C', 'V',
     'B', 'N', 'M', '<', '>', '?', 0, '*',
-    0, ' ', 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, '7',
+    0, ' ', 0,
+    KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,
+    KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10,
+    0, 0, '7',
     '8', '9', '-', '4', '5', '6', '+', '1',
     '2', '3', '0', '.', 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+/* Extended scancode table (after 0xE0 prefix) */
+static const char e0_scancode_to_key[128] = {
+    [0x48] = KEY_UP,
+    [0x50] = KEY_DOWN,
+    [0x4B] = KEY_LEFT,
+    [0x4D] = KEY_RIGHT,
+    [0x47] = KEY_HOME,
+    [0x4F] = KEY_END,
+    [0x53] = KEY_DELETE,
+    [0x52] = KEY_INSERT,
+    [0x49] = KEY_PGUP,
+    [0x51] = KEY_PGDN,
 };
 
 static void kb_push(char c) {
@@ -67,42 +86,64 @@ static void keyboard_handler(interrupt_frame_t *frame) {
     (void)frame;
     uint8_t scancode = inb(KB_DATA_PORT);
 
-    /* Key release (bit 7 set) */
-    if (scancode & 0x80) {
-        uint8_t released = scancode & 0x7F;
-        if (released == 0x2A || released == 0x36) { /* Left/Right Shift */
-            shift_pressed = false;
-        }
+    /* Handle 0xE0 prefix for extended scancodes */
+    if (scancode == 0xE0) {
+        e0_prefix = true;
         pic_send_eoi(1);
         return;
     }
 
-    /* Key press */
-    switch (scancode) {
-    case 0x2A: /* Left Shift */
-    case 0x36: /* Right Shift */
-        shift_pressed = true;
-        break;
-    case 0x3A: /* Caps Lock */
-        caps_lock = !caps_lock;
-        break;
-    default: {
-        char c;
-        if (shift_pressed) {
-            c = scancode_to_ascii_shift[scancode];
-        } else {
-            c = scancode_to_ascii[scancode];
-        }
+    bool is_extended = e0_prefix;
+    e0_prefix = false;
 
-        /* Apply caps lock to letters */
+    /* Key release (bit 7 set) */
+    if (scancode & 0x80) {
+        uint8_t released = scancode & 0x7F;
+        if (released == 0x2A || released == 0x36)
+            shift_pressed = false;
+        if (released == 0x1D)  /* Ctrl release */
+            ctrl_pressed = false;
+        pic_send_eoi(1);
+        return;
+    }
+
+    /* Modifier key presses */
+    if (scancode == 0x2A || scancode == 0x36) {
+        shift_pressed = true;
+        pic_send_eoi(1);
+        return;
+    }
+    if (scancode == 0x1D) {
+        ctrl_pressed = true;
+        pic_send_eoi(1);
+        return;
+    }
+    if (scancode == 0x3A) {
+        caps_lock = !caps_lock;
+        pic_send_eoi(1);
+        return;
+    }
+
+    char c = 0;
+
+    if (is_extended) {
+        /* Extended scancode: look up in E0 table */
+        c = e0_scancode_to_key[scancode & 0x7F];
+    } else {
+        /* Regular scancode */
+        c = shift_pressed ? scancode_to_ascii_shift[scancode]
+                          : scancode_to_ascii[scancode];
+
+        /* Apply caps lock to letters only */
         if (caps_lock && c >= 'a' && c <= 'z') c -= 32;
         else if (caps_lock && c >= 'A' && c <= 'Z') c += 32;
 
-        if (c) kb_push(c);
-        break;
-    }
+        /* Ctrl+letter -> 0x01-0x1A (but not for extended/special keys) */
+        if (ctrl_pressed && c >= 'a' && c <= 'z') c = c - 'a' + 1;
+        else if (ctrl_pressed && c >= 'A' && c <= 'Z') c = c - 'A' + 1;
     }
 
+    if (c) kb_push(c);
     pic_send_eoi(1);
 }
 
@@ -136,4 +177,8 @@ char keyboard_getchar_nonblock(void) {
     char c = kb_buffer[kb_tail];
     kb_tail = (kb_tail + 1) % KB_BUFFER_SIZE;
     return c;
+}
+
+bool keyboard_ctrl_held(void) {
+    return ctrl_pressed;
 }

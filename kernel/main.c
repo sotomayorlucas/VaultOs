@@ -102,6 +102,70 @@ static void run_crypto_tests(void) {
     kprintf("[TEST] All crypto tests passed!\n\n");
 }
 
+/* Performance benchmarks for crypto primitives */
+static void run_crypto_benchmarks(void) {
+    kprintf("[BENCH] Running crypto benchmarks...\n");
+
+    uint8_t bench_key[16] = {0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+                              0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F};
+    uint8_t bench_iv[16] = {0};
+    uint8_t bench_data[1024];
+    uint8_t bench_out[1024];
+    memset(bench_data, 0xAA, sizeof(bench_data));
+
+    aes_ctx_t bench_aes;
+    aes_init(&bench_aes, bench_key);
+
+    uint64_t start, end;
+    const int ITERS = 100;
+
+    /* AES-128-CBC encrypt 1KB */
+    start = rdtsc();
+    for (int i = 0; i < ITERS; i++)
+        aes_cbc_encrypt(&bench_aes, bench_iv, bench_data, bench_out, 1024);
+    end = rdtsc();
+    kprintf("[BENCH] AES-CBC-enc 1KB x%d: %llu cycles (%llu/op)\n",
+            ITERS, end - start, (end - start) / ITERS);
+
+    /* AES-128-CBC decrypt 1KB */
+    start = rdtsc();
+    for (int i = 0; i < ITERS; i++)
+        aes_cbc_decrypt(&bench_aes, bench_iv, bench_out, bench_data, 1024);
+    end = rdtsc();
+    kprintf("[BENCH] AES-CBC-dec 1KB x%d: %llu cycles (%llu/op)\n",
+            ITERS, end - start, (end - start) / ITERS);
+
+    /* SHA-256 1KB */
+    uint8_t digest[32];
+    start = rdtsc();
+    for (int i = 0; i < ITERS; i++)
+        sha256(bench_data, 1024, digest);
+    end = rdtsc();
+    kprintf("[BENCH] SHA-256 1KB x%d: %llu cycles (%llu/op)\n",
+            ITERS, end - start, (end - start) / ITERS);
+
+    /* HMAC-SHA256 40 bytes (capability-sized payload) */
+    uint8_t hmac_key[32] = {0};
+    uint8_t hmac_data[40] = {0};
+    uint8_t hmac_out[32];
+    start = rdtsc();
+    for (int i = 0; i < ITERS; i++)
+        hmac_sha256(hmac_key, 32, hmac_data, 40, hmac_out);
+    end = rdtsc();
+    kprintf("[BENCH] HMAC-SHA256 40B x%d: %llu cycles (%llu/op)\n",
+            ITERS, end - start, (end - start) / ITERS);
+
+    /* cap_check (with existing capabilities) */
+    start = rdtsc();
+    for (int i = 0; i < ITERS; i++)
+        cap_check(1, 1, CAP_READ);
+    end = rdtsc();
+    kprintf("[BENCH] cap_check x%d: %llu cycles (%llu/op)\n",
+            ITERS, end - start, (end - start) / ITERS);
+
+    kprintf("[BENCH] Benchmarks complete.\n\n");
+}
+
 /* Syscall stubs for MVP (shell runs in kernel mode, calls DB directly) */
 int64_t sys_db_query(uint64_t query_str, uint64_t result_buf, uint64_t buf_size) {
     (void)result_buf; (void)buf_size;
@@ -203,6 +267,9 @@ void kernel_main(BootInfo *boot_info) {
 
     /* Run crypto self-tests */
     run_crypto_tests();
+
+    /* Run crypto benchmarks (baseline) */
+    run_crypto_benchmarks();
 
     /* Phase 6: Capability system */
     kprintf("[BOOT] Initializing capability system...\n");

@@ -1,0 +1,97 @@
+\contentsline {chapter}{Preface}{v}{chapter*.2}%
+\contentsline {paragraph}{Conventions.}{v}{paragraph*.3}%
+\contentsline {part}{I\hspace {1em}Foundations}{1}{part.1}%
+\contentsline {chapter}{\numberline {1}Introduction and Design Philosophy}{3}{chapter.1}%
+\contentsline {section}{\numberline {1.1}The Database-as-OS Paradigm}{3}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Capability-Based Security Model}{4}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Threat Model}{4}{section.1.3}%
+\contentsline {section}{\numberline {1.4}System Architecture Overview}{5}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Comparison with Traditional OS Designs}{5}{section.1.5}%
+\contentsline {chapter}{\numberline {2}System Bootstrap}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}UEFI Boot Protocol}{7}{section.2.1}%
+\contentsline {section}{\numberline {2.2}BootInfo Structure}{7}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Kernel Initialization Sequence}{8}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Higher-Half Kernel Design}{8}{section.2.4}%
+\contentsline {part}{II\hspace {1em}Memory Management}{9}{part.2}%
+\contentsline {chapter}{\numberline {3}Physical Memory Manager}{11}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Bitmap Allocator Design}{11}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Algorithm: \textsc {Pmm-Alloc}}{11}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Algorithm: \textsc {Pmm-Free}}{12}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Complexity Analysis}{12}{section.3.4}%
+\contentsline {chapter}{\numberline {4}Virtual Memory and Paging}{13}{chapter.4}%
+\contentsline {section}{\numberline {4.1}x86-64 Four-Level Page Tables}{13}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Virtual Address Space Layout}{13}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Algorithm: \textsc {Page-Map}}{14}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Algorithm: \textsc {Virt-To-Phys}}{14}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Kernel Heap Allocator}{17}{chapter.5}%
+\contentsline {section}{\numberline {5.1}First-Fit with Coalescing}{17}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Algorithm: \textsc {Kmalloc}}{17}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Algorithm: \textsc {Kfree} with Coalescing}{18}{section.5.3}%
+\contentsline {part}{III\hspace {1em}Cryptographic Primitives}{19}{part.3}%
+\contentsline {chapter}{\numberline {6}SHA-256}{21}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Merkle-Damg\r {a}rd Construction}{21}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Compression Function}{22}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Block-Based Update}{23}{section.6.3}%
+\contentsline {chapter}{\numberline {7}AES-128}{25}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Rijndael Cipher Structure}{25}{section.7.1}%
+\contentsline {section}{\numberline {7.2}$\mathrm {GF}(2^8)$ Arithmetic and Precomputed Tables}{25}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Algorithm: \textsc {AES-Key-Expand}}{26}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Algorithm: \textsc {AES-Encrypt-Block}}{26}{section.7.4}%
+\contentsline {section}{\numberline {7.5}CBC Mode}{26}{section.7.5}%
+\contentsline {section}{\numberline {7.6}AES-NI Hardware Acceleration}{27}{section.7.6}%
+\contentsline {chapter}{\numberline {8}HMAC-SHA256 and Random Number Generation}{29}{chapter.8}%
+\contentsline {section}{\numberline {8.1}HMAC Construction}{29}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Pre-computed Context}{29}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Constant-Time Verification}{30}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Random Number Generation}{30}{section.8.4}%
+\contentsline {part}{IV\hspace {1em}Data Structures}{31}{part.4}%
+\contentsline {chapter}{\numberline {9}B-Tree Index}{33}{chapter.9}%
+\contentsline {section}{\numberline {9.1}B-Tree Properties}{33}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Node Structure}{33}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Algorithm: \textsc {B-Tree-Search}}{34}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Algorithm: \textsc {B-Tree-Insert}}{34}{section.9.4}%
+\contentsline {section}{\numberline {9.5}Algorithm: \textsc {B-Tree-Split-Child}}{35}{section.9.5}%
+\contentsline {chapter}{\numberline {10}Auxiliary Data Structures}{37}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Intrusive Doubly-Linked Lists}{37}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Bitmap Operations}{37}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Ring Buffers}{37}{section.10.3}%
+\contentsline {part}{V\hspace {1em}Security Architecture}{39}{part.5}%
+\contentsline {chapter}{\numberline {11}Capability System}{41}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Capability Token Structure}{41}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Algorithm: \textsc {Cap-Create}}{41}{section.11.2}%
+\contentsline {section}{\numberline {11.3}Algorithm: \textsc {Cap-Validate} with Cache}{42}{section.11.3}%
+\contentsline {section}{\numberline {11.4}Algorithm: \textsc {Cap-Check}}{42}{section.11.4}%
+\contentsline {section}{\numberline {11.5}Delegation and Revocation}{43}{section.11.5}%
+\contentsline {section}{\numberline {11.6}Rights Model}{43}{section.11.6}%
+\contentsline {chapter}{\numberline {12}Encrypted Database Engine}{45}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Per-Table Key Derivation}{45}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Query Execution Pipeline}{45}{section.12.2}%
+\contentsline {chapter}{\numberline {13}Query Parser}{47}{chapter.13}%
+\contentsline {section}{\numberline {13.1}SQL Subset Grammar}{47}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Recursive-Descent Parser}{47}{section.13.2}%
+\contentsline {part}{VI\hspace {1em}Process Management}{49}{part.6}%
+\contentsline {chapter}{\numberline {14}Processes and Scheduling}{51}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Process Control Block}{51}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Process State Transitions}{51}{section.14.2}%
+\contentsline {section}{\numberline {14.3}Algorithm: \textsc {Round-Robin-Schedule}}{52}{section.14.3}%
+\contentsline {section}{\numberline {14.4}Context Switching}{52}{section.14.4}%
+\contentsline {chapter}{\numberline {15}Inter-Process Communication}{55}{chapter.15}%
+\contentsline {section}{\numberline {15.1}Message-Passing Model}{55}{section.15.1}%
+\contentsline {section}{\numberline {15.2}Message Queue}{55}{section.15.2}%
+\contentsline {section}{\numberline {15.3}Algorithms: \textsc {IPC-Send} and \textsc {IPC-Recv}}{55}{section.15.3}%
+\contentsline {part}{VII\hspace {1em}Hardware Abstraction}{57}{part.7}%
+\contentsline {chapter}{\numberline {16}x86-64 Architecture Support}{59}{chapter.16}%
+\contentsline {section}{\numberline {16.1}GDT and TSS Configuration}{59}{section.16.1}%
+\contentsline {section}{\numberline {16.2}Interrupt Handling}{59}{section.16.2}%
+\contentsline {section}{\numberline {16.3}8259 PIC Initialization}{60}{section.16.3}%
+\contentsline {section}{\numberline {16.4}SYSCALL/SYSRET Interface}{60}{section.16.4}%
+\contentsline {section}{\numberline {16.5}CPUID Feature Detection}{60}{section.16.5}%
+\contentsline {chapter}{\numberline {17}Device Drivers}{61}{chapter.17}%
+\contentsline {section}{\numberline {17.1}Serial Port (COM1)}{61}{section.17.1}%
+\contentsline {section}{\numberline {17.2}GOP Framebuffer}{61}{section.17.2}%
+\contentsline {section}{\numberline {17.3}PS/2 Keyboard}{61}{section.17.3}%
+\contentsline {section}{\numberline {17.4}8$\times $16 Bitmap Font}{61}{section.17.4}%
+\contentsline {chapter}{\numberline {A}Virtual Address Space Map}{63}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Syscall Number Table}{65}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Error Code Reference}{67}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Performance Benchmarks}{69}{appendix.D}%

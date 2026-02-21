@@ -33,4 +33,18 @@ void fb_get_cursor(uint32_t *col, uint32_t *row);
 uint32_t fb_get_cols(void);
 uint32_t fb_get_rows(void);
 
+/* TUI support: direct cell rendering without moving cursor or changing global colors */
+void fb_draw_cell(uint32_t col, uint32_t row, char ch, uint32_t fg, uint32_t bg);
+
+/* Clear a specific range of rows [start_row, end_row) */
+void fb_clear_rows(uint32_t start_row, uint32_t end_row);
+
+/* Set the scrollable content region. Scroll and wrap only affect rows [top, bottom).
+ * Set both to 0 to use full screen (default behavior). */
+void fb_set_content_region(uint32_t top_row, uint32_t bottom_row);
+
+/* Get raw framebuffer parameters for GUI back buffer */
+void fb_get_raw(uint32_t **base, uint32_t *pitch_bytes,
+                uint32_t *width, uint32_t *height);
+
 #endif /* VAULTOS_FRAMEBUFFER_H */

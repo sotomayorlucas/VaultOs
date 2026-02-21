@@ -1,28 +1,39 @@
 #include "string.h"
 
 void *memcpy(void *dst, const void *src, size_t n) {
-    uint8_t *d = (uint8_t *)dst;
-    const uint8_t *s = (const uint8_t *)src;
-    while (n--) *d++ = *s++;
+    uint64_t *d64 = (uint64_t *)dst;
+    const uint64_t *s64 = (const uint64_t *)src;
+    while (n >= 8) { *d64++ = *s64++; n -= 8; }
+    uint8_t *d8 = (uint8_t *)d64;
+    const uint8_t *s8 = (const uint8_t *)s64;
+    while (n--) *d8++ = *s8++;
     return dst;
 }
 
 void *memset(void *dst, int c, size_t n) {
-    uint8_t *d = (uint8_t *)dst;
-    while (n--) *d++ = (uint8_t)c;
+    uint8_t byte = (uint8_t)c;
+    uint64_t word = (uint64_t)byte * 0x0101010101010101ULL;
+    uint64_t *d64 = (uint64_t *)dst;
+    while (n >= 8) { *d64++ = word; n -= 8; }
+    uint8_t *d8 = (uint8_t *)d64;
+    while (n--) *d8++ = byte;
     return dst;
 }
 
 void *memmove(void *dst, const void *src, size_t n) {
-    uint8_t *d = (uint8_t *)dst;
-    const uint8_t *s = (const uint8_t *)src;
-    if (d < s) {
-        while (n--) *d++ = *s++;
-    } else {
-        d += n;
-        s += n;
-        while (n--) *--d = *--s;
+    if (dst < src) {
+        return memcpy(dst, src, n);
     }
+    /* Copy backwards for overlapping regions where dst > src */
+    uint8_t *d = (uint8_t *)dst + n;
+    const uint8_t *s = (const uint8_t *)src + n;
+    while (n && ((uintptr_t)d & 7)) { *--d = *--s; n--; }
+    uint64_t *d64 = (uint64_t *)d;
+    const uint64_t *s64 = (const uint64_t *)s;
+    while (n >= 8) { *--d64 = *--s64; n -= 8; }
+    d = (uint8_t *)d64;
+    s = (const uint8_t *)s64;
+    while (n--) *--d = *--s;
     return dst;
 }
 
@@ -58,6 +69,11 @@ int strcasecmp(const char *a, const char *b) {
     return (uint8_t)toupper(*a) - (uint8_t)toupper(*b);
 }
 
+int strncasecmp(const char *a, const char *b, size_t n) {
+    while (n && *a && toupper(*a) == toupper(*b)) { a++; b++; n--; }
+    return n == 0 ? 0 : (uint8_t)toupper(*a) - (uint8_t)toupper(*b);
+}
+
 char *strcpy(char *dst, const char *src) {
     char *d = dst;
     while ((*d++ = *src++));
@@ -74,6 +90,13 @@ char *strncpy(char *dst, const char *src, size_t n) {
 char *strcat(char *dst, const char *src) {
     char *d = dst + strlen(dst);
     while ((*d++ = *src++));
+    return dst;
+}
+
+char *strncat(char *dst, const char *src, size_t n) {
+    char *d = dst + strlen(dst);
+    while (n-- && *src) *d++ = *src++;
+    *d = '\0';
     return dst;
 }
 
