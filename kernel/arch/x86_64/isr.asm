@@ -94,12 +94,14 @@ isr_common_stub:
 
     ; Pass pointer to interrupt_frame_t as argument (rdi)
     mov rdi, rsp
+    ; Save rsp in callee-saved register (original rbp is already on the stack)
+    mov rbp, rsp
     ; Ensure 16-byte stack alignment for C call
     and rsp, ~0xF
     call isr_handler
 
-    ; Restore stack and registers
-    mov rsp, rdi
+    ; Restore stack from callee-saved rbp (rdi may be clobbered by C code)
+    mov rsp, rbp
 
     pop r15
     pop r14
