@@ -12,7 +12,8 @@
       "Bash(wsl -d Ubuntu -- bash -c \"cd ''/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel'' && make clean && make kernel 2>&1\")",
       "Bash(\"C:\\\\texlive\\\\2025\\\\bin\\\\windows\\\\pdflatex.exe\" -interaction=nonstopmode vaultos.tex)",
       "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' && make clean && make:*)",
-      "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' && make 2>&1\":*)"
+      "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' && make 2>&1\":*)",
+      "Bash(wsl -d Ubuntu -- bash -lc:*)"
     ]
   }
 }

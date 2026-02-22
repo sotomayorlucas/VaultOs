@@ -2033,24 +2033,29 @@ The shell screen is divided into four regions (Figure~\ref{fig:tui-layout}):
 \begin{tikzpicture}[
   region/.style={draw,thick,minimum width=10cm,font=\sffamily\small},
 ]
-\node[region,fill=blue!30,minimum height=0.6cm,text=white] (title)
-  {Title Bar: ``VaultOS v0.1'' \quad\quad PID: 1 \quad State: Running};
-\node[region,fill=gray!5,minimum height=4cm,below=0pt of title] (content)
-  {Content Area (scrollable output + input prompt)};
-\node[region,fill=blue!10,minimum height=0.6cm,below=0pt of content] (status)
-  {Status Bar: Uptime \quad Heap \quad Tables \quad Processes};
-\node[region,fill=gray!15,minimum height=0.6cm,below=0pt of status] (fkeys)
-  {F1:Help \quad F2:Tables \quad F3:Status \quad F4:Quick \quad F5:Clear};
+\node[region,fill=blue!30,minimum height=1.0cm,text=white] (title)
+  {\begin{tabular}{c}
+    Row 0: VaultOS v0.1.0 \;$|$\; Up: M:SS \;$|$\; PID:1 shell \;$|$\; Procs: 3 \\
+    Row 1: Heap: 48KB/2MB \;$|$\; PMM: 1842/2048 \;$|$\; Tabs: 6 \;$|$\; {[RNG:HW]} AES-128
+  \end{tabular}};
+\node[region,fill=gray!5,minimum height=3.5cm,below=0pt of title] (content)
+  {Content Area (scrollable output + \texttt{vaultos[1]>} prompt)};
+\node[region,fill=gray!15,minimum height=0.6cm,below=0pt of content] (fkeys)
+  {F1:Help \quad F2:Tables \quad F3:Status \quad F4:Security \quad F5:Clear \quad F6:Audit};
 \end{tikzpicture}
-\caption{VaultShell TUI layout. The status bar refreshes every 500\,ms.}
+\caption{VaultShell TUI layout. The two-row status bar at the top shows system state
+including PID, process count, PMM pages, RNG source, and encryption mode.
+The prompt includes the shell's PID in brackets.}
 \label{fig:tui-layout}
 \end{figure}
 
 \noindent
-The TUI layout is computed from the framebuffer dimensions: title bar occupies row~0,
-F-key bar occupies the last row, status bar the row above it, and the content area fills
-all remaining rows. The status bar updates asynchronously during the line editor's idle
-loop.
+The TUI layout is computed from the framebuffer dimensions: a two-row status bar occupies
+rows 0--1, the F-key bar occupies the last row, and the content area fills all remaining
+rows. The status bar displays live metrics including the current PID, active process count,
+PMM free/total pages, RNG source (hardware or software), and encryption mode. The prompt
+shows the shell's PID: \texttt{vaultos[1]>}. F4 invokes the \texttt{security} command and
+F6 displays the audit log.
 
 % -----------------------------------------------------------------------------
 \section{Line Editor}
@@ -2082,7 +2087,12 @@ The line editor provides in-place editing with visual feedback:
 Query results are rendered as colored columnar tables. The formatter handles three cases:
 \textsc{Show Tables} (table list with row counts), \textsc{Describe} (column schema with
 types and flags), and general \textsc{Select} results (aligned columns with type-aware
-formatting). Errors are displayed in red with the error message.
+formatting).
+
+Errors are displayed with the symbolic error code name (via \texttt{vos\_strerror()}) and
+a contextual hint---e.g., a permission error suggests ``Check capabilities with
+\texttt{show caps}''. Success messages are styled by operation type: \textsc{Grant}/\textsc{Revoke}
+in gold, \textsc{Insert}/\textsc{Update} in green, and \textsc{Delete} in cyan.
 
 % -----------------------------------------------------------------------------
 \section{Algorithm: Context-Aware Tab Completion}
@@ -2396,7 +2406,7 @@ events for dispatch.
 \section{Window Manager}
 \label{sec:wm}
 
-The window manager maintains an ordered list of windows (up to 8 simultaneous windows).
+The window manager maintains a z-ordered list of up to 16 simultaneous windows.
 Each window has:
 
 \begin{lstlisting}[caption={Window structure (simplified).}]
@@ -2408,6 +2418,7 @@ typedef struct window {
     uint16_t  client_w, client_h; /* client area */
     uint32_t *canvas;             /* pixel buffer */
     bool      focused, dragging;
+    bool      minimized;          /* hidden but in taskbar */
     widget_t *widgets;            /* widget linked list */
     void (*on_event)(window_t *, gui_event_t *);
     void (*on_paint)(window_t *);
@@ -2420,10 +2431,12 @@ Window operations include:
 \begin{itemize}[leftmargin=2em]
   \item \textbf{Focus}: clicking a window brings it to front (z-order head).
   \item \textbf{Drag}: clicking the title bar and moving the mouse repositions the window.
+  \item \textbf{Minimize}: clicking the ``\_'' button hides the window; clicking its
+        taskbar button restores it. Minimized windows appear with dimmed text in the taskbar.
   \item \textbf{Close}: clicking the ``X'' button sends \texttt{EVT\_CLOSE} to the window's
         event handler, which calls \texttt{wm\_destroy\_window()}.
   \item \textbf{Decorations}: the window manager draws a title bar (20\,px), 1\,px border,
-        and close button. The client area is below the title bar.
+        minimize button, and close button. The client area is below the title bar.
 \end{itemize}
 
 % -----------------------------------------------------------------------------
@@ -2441,14 +2454,16 @@ clear back buffer to desktop background color \;
   call $w$.\texttt{on\_paint}() to render widgets into $w$'s canvas \;
   blit $w$'s canvas to back buffer at $(w.x, w.y)$ \;
 }
-draw mouse cursor (XOR blending for visibility) \;
+draw mouse cursor (white fill, black outline) \;
 \texttt{gfx\_flip\_rect}(dirty region) \;
 \end{algorithm}
 
 \noindent
-The XOR-blended cursor ensures visibility against any background color. The compositor
-runs in the shell's main loop at approximately 60 iterations per second (limited by
-\texttt{hlt()} idle waits).
+The cursor is a 12$\times$19 bitmap with a black outline and white fill, drawn on top
+of all windows. The compositor also renders the taskbar (28\,px at screen bottom) with
+security badges (encryption and RNG status) and the start menu when open. The main
+loop runs at approximately 60 iterations per second (limited by \texttt{hlt()} idle
+waits).
 
 % -----------------------------------------------------------------------------
 \section{Widget Toolkit}
@@ -2471,15 +2486,25 @@ Four widget types are provided:
 \end{center}
 
 \noindent
-Widgets are stored as a linked list per window. \texttt{widget\_dispatch()} routes mouse
-and keyboard events to the appropriate widget based on hit testing. \texttt{widget\_draw\_all()}
-renders all widgets in a window's canvas.
+Widgets are stored as a linked list per window (static pool of 128 slots).
+\texttt{widget\_dispatch()} routes mouse and keyboard events to the appropriate widget
+based on hit testing. \texttt{widget\_draw\_all()} renders all widgets into a window's canvas
+using three helper macros: \texttt{CPIX} (bounds-checked pixel write), \texttt{CHLINE}
+(horizontal line), and \texttt{CTEXT} (text rendering via the 8$\times$16 font bitmap).
+
+Applications that require custom rendering beyond standard widgets (e.g., the text editor,
+data grid, calculator, hex viewer) define these same macros locally in their paint handlers
+and draw directly to \texttt{win->canvas}.
 
 % -----------------------------------------------------------------------------
 \section{Desktop Applications}
 \label{sec:desktop-apps}
 
-The GUI provides four applications accessible from the taskbar menu:
+The GUI provides twelve applications organized into a start menu with category
+separators. All applications are defined in \texttt{desktop.c} using static data buffers,
+event handlers, and paint callbacks.
+
+\subsection{Database Tools}
 
 \paragraph{Query Console.}
 A SQL REPL with a textbox for query input, ``Execute'' and ``Template'' buttons, and a
@@ -2491,19 +2516,124 @@ A two-pane interface: the left pane lists all system tables (with Refresh), and 
 pane shows either the table schema (click a table name) or query results (``View All''
 button). A search box supports \texttt{column=value} filtering.
 
+\paragraph{Data Grid.}
+A spreadsheet-like table viewer with custom canvas rendering. The left pane contains a
+table selector listview; the right pane renders a grid with column headers in gold,
+row numbers, and type-colored cells: numbers in light blue (\texttt{0xFF66CCFF}),
+strings in teal (\texttt{0xFF00DDAA}), and booleans in gold (\texttt{0xFFFFCC00}).
+Rows alternate between two background shades, and the selected row is highlighted.
+Column widths are auto-calculated from header name length. Supports keyboard navigation
+(Up/Down, PgUp/PgDn) and mouse click-to-select.
+
+\subsection{Productivity Applications}
+
+\paragraph{VaultPad Editor.}
+A multi-line plain-text editor (up to 128 lines $\times$ 255 characters per line).
+Because the TextBox widget is single-line only, the editing area is entirely
+custom-rendered in the paint handler using the \texttt{CPIX}/\texttt{CTEXT} canvas
+macros. Features include:
+
+\begin{itemize}[leftmargin=2em]
+  \item Cursor navigation: arrow keys, Home/End, PgUp/PgDn.
+  \item Line editing: character insert, Enter (split line), Backspace (join lines),
+        Delete (forward delete), Tab (4 spaces).
+  \item Line numbers in a left gutter with a separator line.
+  \item Gold 2-pixel cursor bar on the current position.
+  \item Status bar showing line number, column, modified/saved state, and line count.
+  \item Keyboard shortcuts: Ctrl+S (save), Ctrl+Q (close), Ctrl+N (new document).
+  \item Mouse click to position cursor in the editing area.
+  \item Open dialog with a listview showing all saved documents.
+\end{itemize}
+
+\noindent
+Documents are stored in ObjectTable using the same multi-row pattern as scripts: one row
+per line with \texttt{type='document'} and a shared \texttt{name} field. Saving deletes
+all existing rows for that document name and re-inserts each line. Single quotes in
+content are escaped by doubling (\texttt{'} $\rightarrow$ \texttt{''}).
+
+\paragraph{Calculator.}
+An integer-only calculator (\texttt{int64\_t} arithmetic) with zero widget usage---the
+entire interface (display area and 4$\times$5 button grid) is custom-rendered in the
+paint handler. Button colors are context-dependent: digits in dark blue, operators in
+gold, Clear (C) in red, and equals (=) in teal. Supports both keyboard input
+(\texttt{0}--\texttt{9}, \texttt{+-*/}, Enter, Backspace, C) and mouse click on the
+grid via coordinate hit-testing. Division by zero displays an error message.
+
+\paragraph{Object Inspector.}
+A dual-pane object viewer. The left pane shows a filterable listview of all ObjectTable
+entries (formatted as \texttt{[type] name}). Selecting an object displays:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Metadata section}: ID, Name, Type, Owner PID, and creation timestamp
+        with gold headers and teal values.
+  \item \textbf{Hex dump}: traditional format with 8 bytes per row---offset in gold,
+        hex bytes in teal, and ASCII representation (printable characters or `\texttt{.}'
+        for non-printable). PgUp/PgDn scrolls the hex view.
+\end{itemize}
+
+\subsection{Security Applications}
+
+\paragraph{Security Dashboard.}
+A 500$\times$380 window showing encryption status (all six system tables marked
+\texttt{[SEALED]}), the encryption algorithm (AES-128-CBC), HMAC-SHA256 key derivation,
+active capability token count, RNG source (hardware/software), and audit event count.
+A ``View Audit Log'' button opens the Audit Log viewer.
+
+\paragraph{Audit Log Viewer.}
+Displays all entries from AuditTable with a text filter, Refresh button, and a listview.
+Each entry is formatted as \texttt{[MM:SS] ACTION PID:N result}.
+
+\paragraph{Capability Manager.}
+Lists all capability tokens with decoded rights (\texttt{R}ead, \texttt{W}rite,
+e\texttt{X}ec, \texttt{D}elete, \texttt{G}rant, re\texttt{V}oke) and status
+(active/\texttt{REVOKED} in red). A ``Revoke'' button executes
+\texttt{REVOKE \textit{cap\_id}} via SQL.
+
+\paragraph{Object Manager.}
+Lists all objects in ObjectTable with type, name, and data preview. A ``Delete'' button
+removes the selected object via SQL \texttt{DELETE}.
+
+\subsection{System Tools}
+
 \paragraph{Process Manager.}
 Lists all processes from ProcessTable with Refresh, ``Spawn Monitor'' (creates a background
 monitoring process), and ``Kill'' buttons. The Kill button protects the shell process
 from self-termination.
 
 \paragraph{System Status.}
-Displays live system metrics: uptime, heap usage (used/free), table count, and CPU
-architecture. Labels update on each paint cycle.
+A 420$\times$340 window displaying live metrics: uptime, heap usage (used/free), PMM
+pages (free/total), table count, active processes, capability count, RNG source,
+encryption mode, and CPU architecture.
+
+\subsection{Taskbar and Start Menu}
 
 \paragraph{Taskbar.}
 The taskbar occupies the bottom 28 pixels: a ``VaultOS'' menu button on the left, window
-buttons in the center, and a status line (uptime + heap) on the right. Clicking a
-window button brings that window to the front.
+buttons in the center (with dimmed text for minimized windows), and security badges plus
+a status line on the right. The security badges show ``\texttt{ENC}'' in green (always
+active) and ``\texttt{RNG:HW}'' or ``\texttt{RNG:SW}'' colored green or yellow depending
+on \texttt{random\_hw\_available()}.
+
+\paragraph{Start Menu.}
+The start menu contains 12 application entries organized with separator lines:
+
+\begin{center}
+\begin{small}
+\begin{tabular}{@{}l@{}}
+\toprule
+Query Console / Table Browser / Data Grid \\
+\midrule
+VaultPad Editor / Calculator / Object Inspector \\
+\midrule
+Security Dashboard / Audit Log / Capability Manager / Object Manager \\
+\midrule
+Process Manager / System Status \\
+\midrule
+Exit to TUI \\
+\bottomrule
+\end{tabular}
+\end{small}
+\end{center}
 
 % =============================================================================
 % APPENDICES
@@ -2646,6 +2776,10 @@ primarily from the validation cache, not hardware acceleration.
 & \texttt{msg <pid> <text>}    & Send a message \\
 & \texttt{inbox}               & View messages \\
 \midrule
+\multicolumn{3}{@{}l}{\itshape Security \& Diagnostics} \\
+& \texttt{security} / \texttt{crypto}  & Show full crypto dashboard \\
+& \texttt{audit [N]}          & Show last N audit entries (default 20) \\
+\midrule
 \multicolumn{3}{@{}l}{\itshape System \& SQL Commands} \\
 & \texttt{help / status / clear} & Built-in utilities \\
 & \texttt{gui}                 & Launch GUI desktop \\
@@ -2653,7 +2787,12 @@ primarily from the validation cache, not hardware acceleration.
 & \texttt{GRANT / REVOKE}      & Capability management \\
 \midrule
 \multicolumn{3}{@{}l}{\itshape F-Key Shortcuts} \\
-& \texttt{F1--F5}             & Help, Tables, Status, Quick, Clear \\
+& \texttt{F1}                 & Help \\
+& \texttt{F2}                 & Tables \\
+& \texttt{F3}                 & Status \\
+& \texttt{F4}                 & Security dashboard \\
+& \texttt{F5}                 & Clear screen \\
+& \texttt{F6}                 & Audit log \\
 \bottomrule
 \end{tabular}
 \end{small}

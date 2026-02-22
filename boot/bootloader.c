@@ -125,6 +125,7 @@ static EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *ST, Boot
     /* Allocate memory for kernel at known physical address */
     EFI_PHYSICAL_ADDRESS kernelAddr = KERNEL_LOAD_ADDR;
     UINTN pages = (kernelSize + 4095) / 4096;
+    if (pages < 512) pages = 512;  /* Reserve at least 2 MiB for BSS + stack */
     status = uefi_call_wrapper(ST->BootServices->AllocatePages, 4,
                                 AllocateAddress, EfiLoaderData, pages, &kernelAddr);
     if (EFI_ERROR(status)) {
