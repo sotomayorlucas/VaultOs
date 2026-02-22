@@ -150,9 +150,17 @@ static bool hit_close_button(window_t *win, int16_t px, int16_t py) {
             py >= btn_y && py < btn_y + TITLEBAR_HEIGHT);
 }
 
-/* Check if point is in titlebar (excluding close button) */
+/* Check if point is inside the minimize button (left of close button) */
+static bool hit_minimize_button(window_t *win, int16_t px, int16_t py) {
+    int16_t btn_x = win->x + win->width - 2 * TITLEBAR_HEIGHT;
+    int16_t btn_y = win->y;
+    return (px >= btn_x && px < btn_x + TITLEBAR_HEIGHT &&
+            py >= btn_y && py < btn_y + TITLEBAR_HEIGHT);
+}
+
+/* Check if point is in titlebar (excluding close and minimize buttons) */
 static bool hit_titlebar(window_t *win, int16_t px, int16_t py) {
-    return (px >= win->x && px < win->x + win->width - TITLEBAR_HEIGHT &&
+    return (px >= win->x && px < win->x + win->width - 2 * TITLEBAR_HEIGHT &&
             py >= win->y && py < win->y + TITLEBAR_HEIGHT);
 }
 
@@ -175,11 +183,13 @@ void wm_dispatch_event(gui_event_t *ev) {
                 win->y = my - win->drag_oy;
                 return;
             }
-            /* Update close button hover state */
+            /* Update close/minimize button hover state */
             if (hit_window(win, mx, my)) {
                 win->close_hovered = hit_close_button(win, mx, my);
+                win->minimize_hovered = hit_minimize_button(win, mx, my);
             } else {
                 win->close_hovered = false;
+                win->minimize_hovered = false;
             }
         }
     }
@@ -206,6 +216,21 @@ void wm_dispatch_event(gui_event_t *ev) {
                 close_ev.type = EVT_CLOSE;
                 close_ev.target_window = win->id;
                 if (win->on_event) win->on_event(win, &close_ev);
+                return;
+            }
+
+            /* Minimize button? */
+            if (hit_minimize_button(win, mx, my)) {
+                win->visible = false;
+                win->minimized = true;
+                win->focused = false;
+                /* Focus next topmost visible window */
+                for (int j = (int)win_count - 1; j >= 0; j--) {
+                    if (z_order[j]->visible) {
+                        z_order[j]->focused = true;
+                        break;
+                    }
+                }
                 return;
             }
 

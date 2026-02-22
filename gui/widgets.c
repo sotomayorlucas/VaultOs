@@ -21,6 +21,7 @@
 #define LV_BG         0xFF0A0A1A
 #define LV_BORDER     0xFF444466
 #define LV_ITEM_BG    0xFF0A0A1A
+#define LV_ITEM_BG_ALT 0xFF10102A
 #define LV_ITEM_SEL   0xFF1A3366
 #define LV_ITEM_TEXT  0xFF00DDAA
 #define LV_ITEM_H     18
@@ -207,7 +208,8 @@ static void draw_widget(widget_t *w, window_t *win) {
             for (int16_t i = 0; i < visible && (i + w->lv_scroll) < w->lv_count; i++) {
                 int16_t idx = i + w->lv_scroll;
                 int16_t iy = w->y + 1 + i * LV_ITEM_H;
-                uint32_t item_bg = (idx == w->lv_selected) ? LV_ITEM_SEL : LV_ITEM_BG;
+                uint32_t item_bg = (idx == w->lv_selected) ? LV_ITEM_SEL
+                                   : ((idx & 1) ? LV_ITEM_BG_ALT : LV_ITEM_BG);
                 for (int16_t row = 0; row < LV_ITEM_H; row++)
                     CHLINE(w->x + 1, iy + row, w->w - 2, item_bg);
                 CTEXT(w->x + 4, iy + 1, w->lv_items[idx], w->fg, item_bg);

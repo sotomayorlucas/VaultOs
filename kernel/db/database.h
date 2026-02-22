@@ -41,4 +41,16 @@ query_result_t  *db_result_error(int code, const char *msg);
 /* Global row ID counter */
 uint64_t         db_next_row_id(void);
 
+/* Decrypt a record from B-tree value (for scan callbacks).
+ * Returns pointer to internal static buffer, or NULL on MAC failure. */
+record_t        *db_decrypt_record(uint32_t table_id, void *encrypted_value);
+
+/* Re-encrypt a modified record back into the B-tree */
+int              db_update_encrypted(uint32_t table_id, uint64_t row_id,
+                                      record_t *modified);
+
+/* Constant-time audit log (pads strings to fixed length) */
+void             db_audit_log(uint64_t pid, const char *action,
+                               uint64_t target_id, const char *result);
+
 #endif /* VAULTOS_DATABASE_H */

@@ -74,6 +74,7 @@ KERNEL_C_SRCS = \
 	$(KERNEL)/db/database.c \
 	$(KERNEL)/db/btree.c \
 	$(KERNEL)/db/record.c \
+	$(KERNEL)/db/record_serde.c \
 	$(KERNEL)/db/transaction.c \
 	$(KERNEL)/db/query.c \
 	$(KERNEL)/proc/process.c \
@@ -85,6 +86,8 @@ KERNEL_C_SRCS = \
 	$(VSHELL)/tui.c \
 	$(VSHELL)/history.c \
 	$(VSHELL)/complete.c \
+	$(VSHELL)/friendly.c \
+	$(VSHELL)/script.c \
 	$(GUI)/graphics.c \
 	$(GUI)/event.c \
 	$(GUI)/window.c \

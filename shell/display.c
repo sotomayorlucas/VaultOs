@@ -4,6 +4,7 @@
 #include "../kernel/lib/string.h"
 #include "../kernel/drivers/framebuffer.h"
 #include "../kernel/drivers/keyboard.h"
+#include <vaultos/error_codes.h>
 
 #define MAX_COL_WIDTH 30
 
@@ -189,18 +190,65 @@ void display_result(query_result_t *result) {
         return;
     }
 
-    /* Error message */
+    /* Error message — styled with error code and contextual hint */
     if (result->error_code != 0 && result->row_count == 0) {
         fb_set_color(COLOR_RED, COLOR_VOS_BG);
-        kprintf("Error: %s\n", result->error_msg);
+        kprintf("  ERROR");
+        fb_set_color(COLOR_GRAY, COLOR_VOS_BG);
+        kprintf(" [%s] ", vos_strerror(result->error_code));
+        fb_set_color(COLOR_VOS_FG, COLOR_VOS_BG);
+        kprintf("%s\n", result->error_msg);
+
+        /* Contextual hints for common errors */
+        fb_set_color(COLOR_CYAN, COLOR_VOS_BG);
+        switch (result->error_code) {
+        case VOS_ERR_PERM:
+            kprintf("  Hint: Check capabilities with 'security' or 'show caps'\n");
+            break;
+        case VOS_ERR_SYNTAX:
+            kprintf("  Hint: Use 'help' or Tab for command completion\n");
+            break;
+        case VOS_ERR_NOTFOUND:
+            kprintf("  Hint: Use 'tables' to list available tables\n");
+            break;
+        case VOS_ERR_CAP_REVOKED:
+            kprintf("  Hint: Capability was revoked. Request new grant.\n");
+            break;
+        default:
+            break;
+        }
         fb_set_color(COLOR_VOS_FG, COLOR_VOS_BG);
         return;
     }
 
-    /* Status message without rows */
+    /* Status message without rows — styled by operation type */
     if (result->row_count == 0 && result->error_msg[0]) {
-        fb_set_color(COLOR_VOS_HL, COLOR_VOS_BG);
-        kprintf("%s\n", result->error_msg);
+        const char *msg = result->error_msg;
+
+        if (strstr(msg, "GRANT") || strstr(msg, "grant")) {
+            fb_set_color(COLOR_VOS_HL, COLOR_VOS_BG);
+            kprintf("  \xFE ");   /* filled square */
+            kprintf("%s\n", msg);
+        } else if (strstr(msg, "REVOKE") || strstr(msg, "revoke")) {
+            fb_set_color(COLOR_VOS_HL, COLOR_VOS_BG);
+            kprintf("  \xFE ");
+            kprintf("%s\n", msg);
+        } else if (strstr(msg, "DELETE") || strstr(msg, "delete") || strstr(msg, "Deleted")) {
+            fb_set_color(COLOR_CYAN, COLOR_VOS_BG);
+            kprintf("  \xFE ");
+            kprintf("%s\n", msg);
+        } else if (strstr(msg, "INSERT") || strstr(msg, "insert") || strstr(msg, "Inserted")) {
+            fb_set_color(COLOR_GREEN, COLOR_VOS_BG);
+            kprintf("  \xFE ");
+            kprintf("%s\n", msg);
+        } else if (strstr(msg, "UPDATE") || strstr(msg, "update") || strstr(msg, "Updated")) {
+            fb_set_color(COLOR_GREEN, COLOR_VOS_BG);
+            kprintf("  \xFE ");
+            kprintf("%s\n", msg);
+        } else {
+            fb_set_color(COLOR_VOS_HL, COLOR_VOS_BG);
+            kprintf("  %s\n", msg);
+        }
         fb_set_color(COLOR_VOS_FG, COLOR_VOS_BG);
         return;
     }

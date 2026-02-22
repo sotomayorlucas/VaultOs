@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.19)  21 FEB 2026 02:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.19)  21 FEB 2026 21:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1163,7 +1163,7 @@ Package microtype Info: Character `029' is missing
 
  [4]
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-68.
+70.
  (c:/texlive/2025/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1181,7 +1181,7 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.193 \part{Foundations}
+l.195 \part{Foundations}
                          [1
 
 ]
@@ -1189,11 +1189,11 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.2}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.193 \part{Foundations}
+l.195 \part{Foundations}
                          [2]
 Chapter 1.
 
-Overfull \hbox (40.34883pt too wide) in paragraph at lines 232--236
+Overfull \hbox (40.34883pt too wide) in paragraph at lines 234--238
 \T1/lmr/m/n/10.95 (-20) and ev-ery op-er-a-tion on $\OML/lmm/m/it/10.95 r$ \T1/
 lmr/m/n/10.95 (-20) is ex-pressed as a query $\OML/lmm/m/it/10.95 Q \OMS/lmsy/m
 /n/10.95 2 f[]\OML/lmm/m/it/10.95 ; []; []; []\OMS/lmsy/m/n/10.95 g$
@@ -1203,21 +1203,26 @@ lmr/m/n/10.95 (-20) is ex-pressed as a query $\OML/lmm/m/it/10.95 Q \OMS/lmsy/m
 
 {c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
-93.
+95.
 
 (c:/texlive/2025/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) [4{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}{c:/texlive/20
-25/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [5] [6
+25/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
+Overfull \hbox (78.55305pt too wide) in paragraph at lines 357--371
+ [][] 
+ []
 
-]
+[5] [6]
 Chapter 2.
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 383.
+nput line 398.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 384.
-[7]
-Overfull \hbox (6.21216pt too wide) detected at line 450
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 399.
+[7
+
+]
+Overfull \hbox (6.21216pt too wide) detected at line 465
 []
  []
 
@@ -1227,10 +1232,10 @@ Overfull \hbox (6.21216pt too wide) detected at line 450
 Chapter 3.
 
 LaTeX Font Warning: Font shape `T1/lmr/bx/sc' undefined
-(Font)              using `T1/lmr/bx/n' instead on input line 477.
+(Font)              using `T1/lmr/bx/n' instead on input line 492.
 
 LaTeX Font Info:    Trying to load font information for TS1+lmtt on input line 
-493.
+508.
 (c:/texlive/2025/texmf-dist/tex/latex/lm/ts1lmtt.fd
 File: ts1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1246,7 +1251,7 @@ Package microtype Info: Character `texttrademark ' is missing
 ]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 512.
+(Font)              using `T1/lmr/m/scsl' instead on input line 527.
 
 [12]
 Chapter 4.
@@ -1258,16 +1263,16 @@ Underfull \vbox (badness 1571) has occurred while \output is active []
 ]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 604.
+(Font)              using `T1/lmr/m/scsl' instead on input line 619.
 
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 605.
+(Font)              using `T1/lmr/m/scsl' instead on input line 620.
 
 [14]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 610.
+(Font)              using `T1/lmr/m/scsl' instead on input line 635.
 
 [15] [16
 
@@ -1276,11 +1281,11 @@ Chapter 5.
 [17]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 669.
+(Font)              using `T1/lmr/m/scsl' instead on input line 694.
 
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 669.
+(Font)              using `T1/lmr/m/scsl' instead on input line 694.
 
 [18] [19
 
@@ -1300,25 +1305,25 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 ]
 Chapter 7.
 
-Overfull \hbox (11.89734pt too wide) detected at line 800
+Overfull \hbox (11.89734pt too wide) detected at line 825
 []\OT1/lmr/m/n/10.95 (\OML/lmm/m/it/10.95 s; k[]\OT1/lmr/m/n/10.95 ) = [][][][]
 [][][](\OML/lmm/m/it/10.95 s\OT1/lmr/m/n/10.95 )[][]\OML/lmm/m/it/10.95 ; k[][]
 
  []
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <14.4> on input line 804.
+(Font)              <14.4> on input line 829.
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 804.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 804.
+(hyperref)                removing `math shift' on input line 829.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 804.
+(hyperref)                removing `superscript' on input line 829.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 829.
 
 [25] [26] (c:/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2025/11/14 1.11b listings language file
@@ -1343,27 +1348,29 @@ Chapter 9.
 [33
 
 ]
-Underfull \hbox (badness 3312) in paragraph at lines 1086--1086
+Underfull \hbox (badness 3312) in paragraph at lines 1116--1116
 []\T1/lmr/bx/n/10.95 (+20) Algorithm 17: \T1/lmr/m/sc/10.95 (+20) B-Tree-Split-
 Child\T1/lmr/m/n/10.95 (+20) ($\OML/lmm/m/it/10.95 x$\T1/lmr/m/n/10.95 (+20) , 
 $\OML/lmm/m/it/10.95 i$\T1/lmr/m/n/10.95 (+20) ): Split full child
  []
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 1120.
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [34]
+(Font)              <9> on input line 1150.
+[34]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 1154.
+(Font)              using `T1/lmr/m/scsl' instead on input line 1184.
 
-[35] [36
+[35]
 
-]
+LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
+(Font)              using `T1/lmr/m/scsl' instead on input line 1217.
+
+[36]
 Chapter 10.
-[37] [38] [39
+[37
+
+] [38] [39
 
 ] [40]
 Chapter 11.
@@ -1375,92 +1382,178 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 ]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 1267.
+(Font)              using `T1/lmr/m/scsl' instead on input line 1350.
 
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 1267.
+(Font)              using `T1/lmr/m/scsl' instead on input line 1350.
 
 [42]
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 1291.
+(Font)              using `T1/lmr/m/scsl' instead on input line 1374.
 
 [43] [44
 
 ]
 Chapter 12.
+[45]
 
-Overfull \hbox (72.08992pt too wide) in paragraph at lines 1346--1347
+LaTeX Warning: Reference `sec:cbc' on page 46 undefined on input line 1502.
+
+LaTeX Font Info:    Font shape `T1/lmss/m/it' in size <6> not available
+(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 1534.
+
+
+Overfull \hbox (6.64737pt too wide) in paragraph at lines 1535--1537
  [][] 
  []
 
-[45] [46
+[46]
 
-]
-Chapter 13.
-[47] [48] [49
+LaTeX Warning: Reference `sec:ct-verify' on page 47 undefined on input line 155
+4.
 
-] [50]
-Chapter 14.
 
 LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
-(Font)              using `T1/lmr/m/scsl' instead on input line 1456.
+(Font)              using `T1/lmr/m/scsl' instead on input line 1559.
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [51
+ [47]
+Underfull \vbox (badness 1077) has occurred while \output is active []
+
+ [48]
+Overfull \hbox (74.05551pt too wide) in paragraph at lines 1671--1674
+ [][] 
+ []
+
+[49] [50
 
 ]
-[52] [53] [54
+Chapter 13.
+[51] [52] [53
+
+] [54]
+Chapter 14.
+
+LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
+(Font)              using `T1/lmr/m/scsl' instead on input line 1798.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [55
+
+]
+[56] [57] [58
 
 ]
 Chapter 15.
-[55] [56] [57
+[59] [60] [61
 
-] [58]
+] [62]
 Chapter 16.
-[59
+[63
 
-] [60]
+] [64]
 Chapter 17.
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1639.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\times' on input line 1639.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1639.
-
-[61
-
-] [62
+[65
 
 ]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 2006.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 2006.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 2006.
+
+[66] [67
+
+] [68]
+Chapter 18.
+[69
+
+]
+Underfull \vbox (badness 3471) has occurred while \output is active []
+
+ [70]
+[71] [72
+
+]
+Chapter 19.
+
+Overfull \hbox (223.45912pt too wide) in paragraph at lines 2172--2191
+ [][] 
+ []
+
+
+Overfull \hbox (6.9209pt too wide) in paragraph at lines 2200--2209
+ [] 
+ []
+
+[73]
+
+LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
+(Font)              using `T1/lmr/m/scsl' instead on input line 2245.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [74]
+
+LaTeX Font Warning: Font shape `T1/lmr/m/scit' undefined
+(Font)              using `T1/lmr/m/scsl' instead on input line 2262.
+
+[75]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [76]
+[77] [78
+
+]
+Chapter 20.
+[79] [80]
+Underfull \hbox (badness 10000) in paragraph at lines 2465--2466
+[]|\T1/lmr/m/n/10.95 (+20) Static text with con-fig-urable fore-
+ []
+
+[81] [82]
 Appendix A.
-[63] [64
+[83
+
+] [84
 
 ]
 Appendix B.
-[65] [66
+[85] [86
 
 ]
 Appendix C.
-[67] [68
+[87] [88
 
 ]
 Appendix D.
 
-Overfull \hbox (5.14294pt too wide) in paragraph at lines 1726--1737
+Overfull \hbox (5.14294pt too wide) in paragraph at lines 2589--2600
  [] 
  []
 
-[69] (./vaultos.aux)
+[89] [90
+
+]
+Appendix E.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [91]
+[92] (./vaultos.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -1469,17 +1562,20 @@ L3 programming layer <2026-01-19>
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
+
+LaTeX Warning: There were undefined references.
+
 Package rerunfilecheck Info: File `vaultos.out' has not changed.
-(rerunfilecheck)             Checksum: D2786EF967883602FC4FFE7F8190331F;16191.
+(rerunfilecheck)             Checksum: AA520999881219070BEC0554EBA56903;20719.
  ) 
 Here is how much of TeX's memory you used:
- 33668 strings out of 467533
- 623584 string characters out of 5423668
- 1356879 words of memory out of 5000000
- 61120 multiletter control sequences out of 15000+600000
- 792783 words of font info for 288 fonts, out of 8000000 for 9000
+ 34346 strings out of 467533
+ 632510 string characters out of 5423668
+ 1360316 words of memory out of 5000000
+ 61418 multiletter control sequences out of 15000+600000
+ 853834 words of font info for 369 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,19n,107p,1004b,2090s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,22n,107p,1004b,2090s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/texlive/2025
 /texmf-dist/fonts/type1/public/lm/lmbx12.pfb><c:/texlive/2025/texmf-dist/fonts/
 type1/public/lm/lmbx8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmb
@@ -1496,16 +1592,17 @@ e1/public/lm/lmr9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmri10.
 pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmri12.pfb><c:/texlive/20
 25/texmf-dist/fonts/type1/public/lm/lmri9.pfb><c:/texlive/2025/texmf-dist/fonts
 /type1/public/lm/lmss10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/l
-mss9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/texli
-ve/2025/texmf-dist/fonts/type1/public/lm/lmsy8.pfb><c:/texlive/2025/texmf-dist/
-fonts/type1/public/lm/lmsy9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/
-lm/lmtk10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/
-texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt9.pfb><c:/texlive/2025/texmf-
-dist/fonts/type1/public/lm/lmtti10.pfb>
-Output written on vaultos.pdf (77 pages, 701202 bytes).
+mss9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsso8.pfb><c:/texli
+ve/2025/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/texlive/2025/texmf-dist
+/fonts/type1/public/lm/lmsy8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public
+/lm/lmsy9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:/
+texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/texlive/2025/texmf
+-dist/fonts/type1/public/lm/lmtt9.pfb><c:/texlive/2025/texmf-dist/fonts/type1/p
+ublic/lm/lmtti10.pfb>
+Output written on vaultos.pdf (100 pages, 787743 bytes).
 PDF statistics:
- 1513 PDF objects out of 1728 (max. 8388607)
- 1358 compressed objects within 14 object streams
- 574 named destinations out of 1000 (max. 500000)
- 96525 words of extra memory for PDF output out of 106986 (max. 10000000)
+ 2004 PDF objects out of 2073 (max. 8388607)
+ 1817 compressed objects within 19 object streams
+ 813 named destinations out of 1000 (max. 500000)
+ 129509 words of extra memory for PDF output out of 154059 (max. 10000000)
 

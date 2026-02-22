@@ -215,10 +215,16 @@ static bool record_matches(record_t *rec, table_schema_t *schema,
     return true;
 }
 
+/*
+ * Scan callbacks: decrypt each encrypted record from the B-tree,
+ * then apply WHERE filtering on the plaintext.
+ */
 static void select_scan_callback(uint64_t key, void *value, void *ctx) {
     (void)key;
     scan_ctx_t *sc = (scan_ctx_t *)ctx;
-    record_t *rec = (record_t *)value;
+
+    record_t *rec = db_decrypt_record(sc->schema->table_id, value);
+    if (!rec) return; /* MAC verification failed or decrypt error */
 
     if (record_matches(rec, sc->schema, sc->conditions, sc->cond_count)) {
         db_result_add_row(sc->result, rec);
@@ -484,19 +490,8 @@ static query_result_t *exec_insert(parser_t *p, uint64_t pid) {
     int err = db_insert_record(schema->table_id, &rec);
     if (err != VOS_OK) return db_result_error(err, "Insert failed");
 
-    /* Audit log */
-    record_t audit;
-    memset(&audit, 0, sizeof(audit));
-    audit.row_id = db_next_row_id();
-    audit.table_id = TABLE_ID_AUDIT;
-    audit.field_count = 6;
-    record_set_u64(&audit, 0, audit.row_id);
-    record_set_u64(&audit, 1, pit_get_ticks());
-    record_set_u64(&audit, 2, pid);
-    record_set_str(&audit, 3, "INSERT");
-    record_set_u64(&audit, 4, rec.row_id);
-    record_set_str(&audit, 5, "OK");
-    db_insert_record(TABLE_ID_AUDIT, &audit);
+    /* Audit log (constant-time) */
+    db_audit_log(pid, "INSERT", rec.row_id, "OK");
 
     query_result_t *result = db_result_create(0);
     snprintf(result->error_msg, sizeof(result->error_msg),
@@ -506,10 +501,12 @@ static query_result_t *exec_insert(parser_t *p, uint64_t pid) {
 
 static void delete_scan_callback(uint64_t key, void *value, void *ctx) {
     scan_ctx_t *sc = (scan_ctx_t *)ctx;
-    record_t *rec = (record_t *)value;
+
+    record_t *rec = db_decrypt_record(sc->schema->table_id, value);
+    if (!rec) return; /* MAC verification failed */
 
     if (record_matches(rec, sc->schema, sc->conditions, sc->cond_count)) {
-        /* Mark for deletion by adding to result */
+        /* Store decrypted copy for row_id extraction */
         db_result_add_row(sc->result, rec);
     }
     (void)key;
@@ -542,19 +539,8 @@ static query_result_t *exec_delete(parser_t *p, uint64_t pid) {
         db_delete_record(schema->table_id, matches->rows[i].row_id);
         deleted++;
 
-        /* Audit */
-        record_t audit;
-        memset(&audit, 0, sizeof(audit));
-        audit.row_id = db_next_row_id();
-        audit.table_id = TABLE_ID_AUDIT;
-        audit.field_count = 6;
-        record_set_u64(&audit, 0, audit.row_id);
-        record_set_u64(&audit, 1, pit_get_ticks());
-        record_set_u64(&audit, 2, pid);
-        record_set_str(&audit, 3, "DELETE");
-        record_set_u64(&audit, 4, matches->rows[i].row_id);
-        record_set_str(&audit, 5, "OK");
-        db_insert_record(TABLE_ID_AUDIT, &audit);
+        /* Audit (constant-time) */
+        db_audit_log(pid, "DELETE", matches->rows[i].row_id, "OK");
     }
 
     db_result_free(matches);
@@ -605,40 +591,33 @@ static query_result_t *exec_update(parser_t *p, uint64_t pid) {
     where_cond_t conds[MAX_WHERE_CONDS];
     uint32_t cond_count = parse_where(p, conds);
 
-    /* Find and update matching rows */
+    /* Find matching rows via scan (decrypts each record) */
     query_result_t *matches = db_result_create(16);
     scan_ctx_t ctx = { .result = matches, .schema = schema,
                        .conditions = conds, .cond_count = cond_count };
     btree_scan(db_get_index(schema->table_id), select_scan_callback, &ctx);
 
+    /* Update: decrypt → modify → re-encrypt with new IV */
     uint32_t updated = 0;
     for (uint32_t i = 0; i < matches->row_count; i++) {
-        record_t *stored = db_get_record(schema->table_id, matches->rows[i].row_id);
-        if (!stored) continue;
+        /* matches->rows[i] is already a decrypted copy */
+        record_t modified = matches->rows[i];
 
         for (uint32_t s = 0; s < set_count; s++) {
             int ci = find_column_index(schema, set_cols[s]);
             if (ci < 0) continue;
-            stored->fields[ci] = set_vals[s];
+            modified.fields[ci] = set_vals[s];
         }
+
+        /* Re-encrypt: delete old + insert new with fresh IV */
+        db_update_encrypted(schema->table_id, modified.row_id, &modified);
         updated++;
     }
 
     db_result_free(matches);
 
-    /* Audit */
-    record_t audit;
-    memset(&audit, 0, sizeof(audit));
-    audit.row_id = db_next_row_id();
-    audit.table_id = TABLE_ID_AUDIT;
-    audit.field_count = 6;
-    record_set_u64(&audit, 0, audit.row_id);
-    record_set_u64(&audit, 1, pit_get_ticks());
-    record_set_u64(&audit, 2, pid);
-    record_set_str(&audit, 3, "UPDATE");
-    record_set_u64(&audit, 4, 0);
-    record_set_str(&audit, 5, "OK");
-    db_insert_record(TABLE_ID_AUDIT, &audit);
+    /* Audit (constant-time) */
+    db_audit_log(pid, "UPDATE", 0, "OK");
 
     query_result_t *result = db_result_create(0);
     snprintf(result->error_msg, sizeof(result->error_msg),

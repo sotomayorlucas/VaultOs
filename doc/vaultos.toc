@@ -51,6 +51,7 @@
 \contentsline {section}{\numberline {9.3}Algorithm: \textsc {B-Tree-Search}}{34}{section.9.3}%
 \contentsline {section}{\numberline {9.4}Algorithm: \textsc {B-Tree-Insert}}{34}{section.9.4}%
 \contentsline {section}{\numberline {9.5}Algorithm: \textsc {B-Tree-Split-Child}}{35}{section.9.5}%
+\contentsline {section}{\numberline {9.6}Algorithm: \textsc {B-Tree-Delete} (Lazy)}{36}{section.9.6}%
 \contentsline {chapter}{\numberline {10}Auxiliary Data Structures}{37}{chapter.10}%
 \contentsline {section}{\numberline {10.1}Intrusive Doubly-Linked Lists}{37}{section.10.1}%
 \contentsline {section}{\numberline {10.2}Bitmap Operations}{37}{section.10.2}%
@@ -64,34 +65,69 @@
 \contentsline {section}{\numberline {11.5}Delegation and Revocation}{43}{section.11.5}%
 \contentsline {section}{\numberline {11.6}Rights Model}{43}{section.11.6}%
 \contentsline {chapter}{\numberline {12}Encrypted Database Engine}{45}{chapter.12}%
-\contentsline {section}{\numberline {12.1}Per-Table Key Derivation}{45}{section.12.1}%
-\contentsline {section}{\numberline {12.2}Query Execution Pipeline}{45}{section.12.2}%
-\contentsline {chapter}{\numberline {13}Query Parser}{47}{chapter.13}%
-\contentsline {section}{\numberline {13.1}SQL Subset Grammar}{47}{section.13.1}%
-\contentsline {section}{\numberline {13.2}Recursive-Descent Parser}{47}{section.13.2}%
-\contentsline {part}{VI\hspace {1em}Process Management}{49}{part.6}%
-\contentsline {chapter}{\numberline {14}Processes and Scheduling}{51}{chapter.14}%
-\contentsline {section}{\numberline {14.1}Process Control Block}{51}{section.14.1}%
-\contentsline {section}{\numberline {14.2}Process State Transitions}{51}{section.14.2}%
-\contentsline {section}{\numberline {14.3}Algorithm: \textsc {Round-Robin-Schedule}}{52}{section.14.3}%
-\contentsline {section}{\numberline {14.4}Context Switching}{52}{section.14.4}%
-\contentsline {chapter}{\numberline {15}Inter-Process Communication}{55}{chapter.15}%
-\contentsline {section}{\numberline {15.1}Message-Passing Model}{55}{section.15.1}%
-\contentsline {section}{\numberline {15.2}Message Queue}{55}{section.15.2}%
-\contentsline {section}{\numberline {15.3}Algorithms: \textsc {IPC-Send} and \textsc {IPC-Recv}}{55}{section.15.3}%
-\contentsline {part}{VII\hspace {1em}Hardware Abstraction}{57}{part.7}%
-\contentsline {chapter}{\numberline {16}x86-64 Architecture Support}{59}{chapter.16}%
-\contentsline {section}{\numberline {16.1}GDT and TSS Configuration}{59}{section.16.1}%
-\contentsline {section}{\numberline {16.2}Interrupt Handling}{59}{section.16.2}%
-\contentsline {section}{\numberline {16.3}8259 PIC Initialization}{60}{section.16.3}%
-\contentsline {section}{\numberline {16.4}SYSCALL/SYSRET Interface}{60}{section.16.4}%
-\contentsline {section}{\numberline {16.5}CPUID Feature Detection}{60}{section.16.5}%
-\contentsline {chapter}{\numberline {17}Device Drivers}{61}{chapter.17}%
-\contentsline {section}{\numberline {17.1}Serial Port (COM1)}{61}{section.17.1}%
-\contentsline {section}{\numberline {17.2}GOP Framebuffer}{61}{section.17.2}%
-\contentsline {section}{\numberline {17.3}PS/2 Keyboard}{61}{section.17.3}%
-\contentsline {section}{\numberline {17.4}8$\times $16 Bitmap Font}{61}{section.17.4}%
-\contentsline {chapter}{\numberline {A}Virtual Address Space Map}{63}{appendix.A}%
-\contentsline {chapter}{\numberline {B}Syscall Number Table}{65}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Error Code Reference}{67}{appendix.C}%
-\contentsline {chapter}{\numberline {D}Performance Benchmarks}{69}{appendix.D}%
+\contentsline {section}{\numberline {12.1}Per-Table Key Derivation with Domain Separation}{45}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Record Serialization}{46}{section.12.2}%
+\contentsline {section}{\numberline {12.3}Encrypt-then-MAC Pipeline}{46}{section.12.3}%
+\contentsline {section}{\numberline {12.4}Verify-then-Decrypt Pipeline}{47}{section.12.4}%
+\contentsline {section}{\numberline {12.5}Constant-Time Audit Logging}{49}{section.12.5}%
+\contentsline {section}{\numberline {12.6}Query Execution Pipeline}{49}{section.12.6}%
+\contentsline {chapter}{\numberline {13}Query Parser}{51}{chapter.13}%
+\contentsline {section}{\numberline {13.1}SQL Subset Grammar}{51}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Recursive-Descent Parser}{51}{section.13.2}%
+\contentsline {part}{VI\hspace {1em}Process Management}{53}{part.6}%
+\contentsline {chapter}{\numberline {14}Processes and Scheduling}{55}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Process Control Block}{55}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Process State Transitions}{55}{section.14.2}%
+\contentsline {section}{\numberline {14.3}Algorithm: \textsc {Round-Robin-Schedule}}{56}{section.14.3}%
+\contentsline {section}{\numberline {14.4}Context Switching}{56}{section.14.4}%
+\contentsline {chapter}{\numberline {15}Inter-Process Communication}{59}{chapter.15}%
+\contentsline {section}{\numberline {15.1}Message-Passing Model}{59}{section.15.1}%
+\contentsline {section}{\numberline {15.2}Message Queue}{59}{section.15.2}%
+\contentsline {section}{\numberline {15.3}Algorithms: \textsc {IPC-Send} and \textsc {IPC-Recv}}{59}{section.15.3}%
+\contentsline {part}{VII\hspace {1em}Hardware Abstraction}{61}{part.7}%
+\contentsline {chapter}{\numberline {16}x86-64 Architecture Support}{63}{chapter.16}%
+\contentsline {section}{\numberline {16.1}GDT and TSS Configuration}{63}{section.16.1}%
+\contentsline {section}{\numberline {16.2}Interrupt Handling}{63}{section.16.2}%
+\contentsline {section}{\numberline {16.3}8259 PIC Initialization}{64}{section.16.3}%
+\contentsline {section}{\numberline {16.4}SYSCALL/SYSRET Interface}{64}{section.16.4}%
+\contentsline {section}{\numberline {16.5}CPUID Feature Detection}{64}{section.16.5}%
+\contentsline {chapter}{\numberline {17}Device Drivers}{65}{chapter.17}%
+\contentsline {section}{\numberline {17.1}Serial Port (COM1)}{65}{section.17.1}%
+\contentsline {section}{\numberline {17.2}GOP Framebuffer}{65}{section.17.2}%
+\contentsline {section}{\numberline {17.3}PS/2 Keyboard}{65}{section.17.3}%
+\contentsline {section}{\numberline {17.4}PS/2 Mouse}{65}{section.17.4}%
+\contentsline {section}{\numberline {17.5}8$\times $16 Bitmap Font}{66}{section.17.5}%
+\contentsline {part}{VIII\hspace {1em}User Interface}{67}{part.8}%
+\contentsline {chapter}{\numberline {18}VaultShell}{69}{chapter.18}%
+\contentsline {section}{\numberline {18.1}Text User Interface}{69}{section.18.1}%
+\contentsline {section}{\numberline {18.2}Line Editor}{70}{section.18.2}%
+\contentsline {section}{\numberline {18.3}Display Formatter}{70}{section.18.3}%
+\contentsline {section}{\numberline {18.4}Algorithm: Context-Aware Tab Completion}{70}{section.18.4}%
+\contentsline {chapter}{\numberline {19}Friendly Command Layer}{73}{chapter.19}%
+\contentsline {section}{\numberline {19.1}Design: Commands as SQL Generators}{73}{section.19.1}%
+\contentsline {section}{\numberline {19.2}Command-to-SQL Translation}{73}{section.19.2}%
+\contentsline {section}{\numberline {19.3}Table Aliases}{73}{section.19.3}%
+\contentsline {section}{\numberline {19.4}Script Engine}{74}{section.19.4}%
+\contentsline {section}{\numberline {19.5}Process Management Commands}{75}{section.19.5}%
+\contentsline {paragraph}{spawn.}{75}{paragraph*.16}%
+\contentsline {paragraph}{kill.}{76}{paragraph*.17}%
+\contentsline {paragraph}{msg / inbox.}{76}{paragraph*.18}%
+\contentsline {paragraph}{monitor.}{76}{paragraph*.19}%
+\contentsline {section}{\numberline {19.6}Algorithm: Friendly-Translate}{77}{section.19.6}%
+\contentsline {chapter}{\numberline {20}Graphical Desktop}{79}{chapter.20}%
+\contentsline {section}{\numberline {20.1}Graphics Subsystem}{79}{section.20.1}%
+\contentsline {section}{\numberline {20.2}Event System}{80}{section.20.2}%
+\contentsline {section}{\numberline {20.3}Window Manager}{80}{section.20.3}%
+\contentsline {section}{\numberline {20.4}Compositor}{81}{section.20.4}%
+\contentsline {section}{\numberline {20.5}Widget Toolkit}{81}{section.20.5}%
+\contentsline {section}{\numberline {20.6}Desktop Applications}{81}{section.20.6}%
+\contentsline {paragraph}{Query Console.}{81}{paragraph*.20}%
+\contentsline {paragraph}{Table Browser.}{82}{paragraph*.21}%
+\contentsline {paragraph}{Process Manager.}{82}{paragraph*.22}%
+\contentsline {paragraph}{System Status.}{82}{paragraph*.23}%
+\contentsline {paragraph}{Taskbar.}{82}{paragraph*.24}%
+\contentsline {chapter}{\numberline {A}Virtual Address Space Map}{83}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Syscall Number Table}{85}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Error Code Reference}{87}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Performance Benchmarks}{89}{appendix.D}%
+\contentsline {chapter}{\numberline {E}VaultShell Command Reference}{91}{appendix.E}%

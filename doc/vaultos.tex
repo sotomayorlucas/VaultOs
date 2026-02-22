@@ -147,7 +147,9 @@
 \node[layer=blue!22,above=0pt of nk]        (cr)  {Cryptographic Engine: AES-128 $\cdot$ SHA-256 $\cdot$ HMAC $\cdot$ RNG};
 \node[layer=blue!30,above=0pt of cr]        (cp)  {Capability Manager $\cdot$ Encrypted Database Engine};
 \node[layer=blue!40,above=0pt of cp,
-  font=\sffamily\small\color{white}]        (sh)  {VaultShell: SQL Query REPL};
+  font=\sffamily\small\color{white}]        (sh)  {VaultShell: Friendly CLI $\cdot$ SQL REPL $\cdot$ Script Engine};
+\node[layer=blue!50,above=0pt of sh,
+  font=\sffamily\small\color{white}]        (gui) {GUI Desktop: Window Manager $\cdot$ Compositor $\cdot$ Applications};
 \end{tikzpicture}
 \vspace{2cm}
 {\large February 2026\par}
@@ -298,6 +300,16 @@ length-extension attacks apply.
 
 Out of scope (MVP): cold-boot attacks, hardware Trojans, DMA attacks, Spectre/Meltdown.
 
+\textbf{Cryptographic RNG dependency.}
+The security of all encryption and capability operations depends on the
+availability of hardware \texttt{RDRAND} (Intel Ivy Bridge and later).  When
+\texttt{RDRAND} is unavailable, VaultOS falls back to a \texttt{RDTSC}-seeded
+\texttt{xorshift128+} generator, which provides statistical but \emph{not}
+cryptographic randomness.  In virtualised environments where TSC values are
+predictable, this fallback weakens all security guarantees---IVs become
+predictable and capability tokens lose unforgeability.  The system logs a
+warning at boot when operating in fallback mode.
+
 % -----------------------------------------------------------------------------
 \section{System Architecture Overview}
 \label{sec:arch-overview}
@@ -311,15 +323,18 @@ Figure~\ref{fig:architecture} shows the layered architecture.
     minimum height=1cm,font=\sffamily\small,text=black},
   >=Stealth
 ]
-\node[block,fill=gray!10]                     (hw)  {x86\_64 Hardware: CPU, RAM, PIC, PIT, PS/2, COM1, GOP};
-\node[block,fill=blue!8,above=4pt of hw]      (drv) {Drivers: Serial, Framebuffer, Keyboard, Font};
+\node[block,fill=gray!10]                     (hw)  {x86\_64 Hardware: CPU, RAM, PIC, PIT, PS/2 Keyboard \& Mouse, COM1, GOP};
+\node[block,fill=blue!8,above=4pt of hw]      (drv) {Drivers: Serial, Framebuffer, Keyboard, Mouse, Font};
 \node[block,fill=blue!12,above=4pt of drv]    (mm)  {Memory: PMM (Bitmap) $\mid$ VMM (4-Level Paging) $\mid$ Heap (First-Fit)};
 \node[block,fill=blue!18,above=4pt of mm]     (cry) {Crypto: AES-128-CBC $\mid$ SHA-256 $\mid$ HMAC-SHA256 $\mid$ RDRAND RNG};
 \node[block,fill=blue!25,above=4pt of cry]    (cap) {Security: Capability Manager (HMAC Tokens, Validation Cache)};
 \node[block,fill=blue!32,above=4pt of cap]    (db)  {Database: B-Tree Index $\mid$ Record Store $\mid$ Query Parser $\mid$ Transactions};
 \node[block,fill=blue!40,above=4pt of db,
-  text=white]                                  (sh)  {VaultShell: SQL REPL $\mid$ Line Editor $\mid$ Display Formatter};
+  text=white]                                  (sh)  {VaultShell: Friendly CLI $\mid$ SQL REPL $\mid$ Script Engine $\mid$ Tab Completion};
+\node[block,fill=blue!50,above=4pt of sh,
+  text=white]                                  (gui) {GUI Desktop: Graphics $\mid$ Events $\mid$ Window Manager $\mid$ Compositor $\mid$ Widgets};
 
+\draw[->,thick] (gui) -- (sh);
 \draw[->,thick] (sh) -- (db);
 \draw[->,thick] (db) -- (cap);
 \draw[->,thick] (cap) -- (cry);
@@ -350,7 +365,7 @@ IPC                      & Pipes, signals, shmem        & Message table + querie
 Process interface        & \texttt{fork/exec/wait}      & \texttt{proc\_create/exit} \\
 Encryption               & Optional (dm-crypt, etc.)    & Mandatory, per-table \\
 Audit                    & Syslog (optional)            & Built-in AuditTable \\
-User interface           & Shell + utilities            & SQL REPL \\
+User interface           & Shell + utilities            & Friendly CLI + SQL REPL + GUI Desktop \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -605,6 +620,16 @@ For any virtual address $v$ mapped via \textsc{Page-Map} to physical address $p$
 flags $f$, a subsequent call to \textsc{Virt-To-Phys} returns $p$, provided no
 intervening unmap or CR3 reload invalidates the mapping.
 \end{theorem}
+\begin{proof}[Proof sketch]
+\textsc{Page-Map}$(v, p, f)$ writes the entry $(\text{base}=p,\;\text{flags}=f)$ into
+the page-table entry (PTE) selected by the level-1 index of~$v$.  The four-level
+walk in \textsc{Virt-To-Phys} extracts exactly the same indices from~$v$
+(bits~47--39, 38--30, 29--21, 20--12) and follows the same PML4$\to$PDP$\to$PD$\to$PT
+chain.  At the final level it reads the PTE base address, which is~$p$.
+Since x86-64 address translation is deterministic for a given CR3 and page-table
+contents, the result follows.  The ``no intervening unmap'' proviso ensures the
+PTE has not been cleared between the two calls.
+\end{proof}
 
 % =============================================================================
 \chapter{Kernel Heap Allocator}
@@ -1006,30 +1031,35 @@ $\epsilon + q \cdot 2^{-256}$.
 \chapter{B-Tree Index}
 \label{ch:btree}
 
-The database engine indexes every table with a B-tree of order $t = 64$,
-providing $\BigO(\log_{64} n)$ search, insert, and delete operations.
+The database engine indexes every table with a B-tree of order $b = 64$,
+providing $\BigO(\log_{b} n)$ search, insert, and delete operations.
 
 \section{B-Tree Properties}
 
-\begin{definition}[B-Tree of Order $t$]
-A B-tree of order $t$ satisfies:
+\begin{definition}[B-Tree of Order $b$]
+\label{def:btree-order}
+A B-tree of order $b$ (maximum branching factor) satisfies:
 \begin{enumerate}
-\item Every node has at most $2t - 1$ keys ($= 127$ for $t = 64$).
-\item Every non-root node has at least $t - 1$ keys ($= 63$).
+\item Every node has at most $b$ children and $b - 1$ keys ($= 63$ for $b = 64$).
+\item Every non-root internal node has at least $\lceil b/2 \rceil$ children
+      ($= 32$) and $\lceil b/2 \rceil - 1$ keys ($= 31$).
+\item The root has at least $2$ children (if non-leaf) or $0$ keys (if empty tree).
 \item A node with $k$ keys has $k + 1$ children (if internal).
 \item All leaves appear at the same depth.
 \end{enumerate}
 \end{definition}
 
 \noindent
-In \VaultOS{}, BTREE\_ORDER = 64, so nodes store up to 63 keys and 64 child pointers.
-Each node occupies approximately $63 \times 8 + 63 \times 8 + 64 \times 8 + 8 = 1{,}520$
-bytes, fitting comfortably in L1 cache.
+In \VaultOS{}, \texttt{BTREE\_ORDER} $= 64$, so nodes store up to 63 keys and 64 child
+pointers.  Each node occupies approximately $63 \times 8 + 63 \times 8 + 64 \times 8 + 8
+= 1{,}520$ bytes, fitting comfortably in L1 cache.
 
 \begin{remark}
-We use order-$t$ notation where the maximum number of keys per node is $t - 1 = 63$,
-consistent with the CLRS definition. Some references use $t$ for the maximum keys;
-ours uses $t$ for the minimum degree.
+Our order~$b$ corresponds to CLRS \emph{minimum degree} $t = b/2 = 32$: CLRS
+requires $t - 1 \leq k \leq 2t - 1$ keys per non-root node, giving $31 \leq k \leq 63$,
+which matches our $\lceil b/2 \rceil - 1 \leq k \leq b - 1$.
+Some references (Knuth) define order as the maximum number of keys; ours defines it
+as the maximum number of children.
 \end{remark}
 
 \section{Node Structure}
@@ -1135,20 +1165,73 @@ $x.\field{num\_keys} \leftarrow x.\field{num\_keys} + 1$ \;
 
 \begin{theorem}[B-Tree Height Bound]
 \label{thm:btree-height}
-A B-tree of order $t = 64$ containing $n$ keys has height
-$h \leq \log_{64}\!\bigl(\frac{n+1}{2}\bigr)$.
+A B-tree of order $b = 64$ (CLRS minimum degree $t = b/2 = 32$) containing $n$ keys has
+height $h \leq \log_{t}\!\bigl(\frac{n+1}{2}\bigr) = \log_{32}\!\bigl(\frac{n+1}{2}\bigr)$.
 \end{theorem}
 \begin{proof}
-The minimum number of keys at depth $d$ is $2 \cdot 63^{d-1}$ for $d \geq 1$ (the root
-has at least 1 key, each other node at least 63). Summing gives
-$n \geq 1 + 2\sum_{i=1}^{h-1} 63^i = 2 \cdot 64^{h-1} - 1$, yielding
-$h \leq 1 + \log_{64}\!\bigl(\frac{n+1}{2}\bigr)$.
+The root has at least $1$ key and $2$ children.  Every other internal node has at
+least $t = 32$ children and $t - 1 = 31$ keys.  At depth~$d \geq 1$ there are at
+least $2t^{d-1}$ nodes, each with at least $t - 1$ keys.  Summing:
+$n \geq 1 + 2(t-1)\sum_{i=0}^{h-1} t^i = 2t^h - 1$, yielding
+$h \leq \log_t\!\bigl(\frac{n+1}{2}\bigr)$.
 \end{proof}
 
 \begin{corollary}
-For $n = 10^6$ keys, $h \leq 1 + \log_{64}(500{,}000) \approx 4.15$, so the tree has at
+For $n = 10^6$ keys, $h \leq 1 + \log_{32}(500{,}000) \approx 4.8$, so the tree has at
 most 5 levels. For $n = 10^3$ (typical VaultOS workload), $h \leq 3$.
 \end{corollary}
+
+\section{Algorithm: \textsc{B-Tree-Delete} (Lazy)}
+
+\begin{algorithm}[H]
+\caption{\textsc{B-Tree-Delete}($T$, $k$): Delete key $k$ from B-tree $T$ (lazy MVP).}
+\label{alg:btree-delete}
+$x \leftarrow T.\field{root}$ \;
+\While{$x \neq \textsc{NULL}$}{
+  $i \leftarrow 0$ \;
+  \While{$i < x.\field{num\_keys}$ \And $k > x.\field{keys}[i]$}{
+    $i \leftarrow i + 1$ \;
+  }
+  \If{$i < x.\field{num\_keys}$ \And $k = x.\field{keys}[i]$}{
+    \tcp{Key found at position $i$}
+    \If{$x.\field{is\_leaf}$}{
+      \tcp{Case 1: Leaf node --- shift remaining keys left}
+      \For{$j \leftarrow i$ \KwTo $x.\field{num\_keys} - 2$}{
+        $x.\field{keys}[j] \leftarrow x.\field{keys}[j+1]$ \;
+        $x.\field{values}[j] \leftarrow x.\field{values}[j+1]$ \;
+      }
+      $x.\field{num\_keys} \leftarrow x.\field{num\_keys} - 1$ \;
+      \Return \textsc{TRUE} \;
+    }
+    \Else{
+      \tcp{Case 2: Internal node --- mark value as deleted}
+      $x.\field{values}[i] \leftarrow \textsc{NULL}$ \;
+      \Return \textsc{TRUE} \;
+    }
+  }
+  \If{$x.\field{is\_leaf}$}{
+    \Return \textsc{FALSE} \tcp*{key not in tree}
+  }
+  $x \leftarrow x.\field{children}[i]$ \tcp*{descend to child}
+}
+\Return \textsc{FALSE} \;
+\end{algorithm}
+
+\begin{remark}[Lazy Delete Limitations]
+Algorithm~\ref{alg:btree-delete} is a simplified MVP implementation that does
+\emph{not} maintain the B-tree minimum-occupancy invariant
+(Definition~\ref{def:btree-order}, property~2).  Specifically:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Leaf nodes} may underflow below $\lceil b/2 \rceil - 1 = 31$ keys
+        after deletion.
+  \item \textbf{Internal nodes} retain tombstoned entries (\textsc{NULL} values)
+        rather than replacing the key with an in-order predecessor/successor.
+  \item No merge or key redistribution between siblings is performed.
+\end{itemize}
+For the current VaultOS workload (six system tables with low churn), this is
+acceptable.  A full CLRS-compliant delete with merge and redistribute is planned
+for a future session.
+\end{remark}
 
 % =============================================================================
 \chapter{Auxiliary Data Structures}
@@ -1311,42 +1394,291 @@ A child can never possess more rights than its parent.
 \chapter{Encrypted Database Engine}
 \label{ch:database}
 
-\section{Per-Table Key Derivation}
+VaultOS enforces the principle ``all data is confidential'' by encrypting every record
+at rest using per-table AES-128-CBC with HMAC-SHA256 integrity protection.
+The Encrypt-then-MAC composition guarantees both confidentiality (IND-CPA) and
+integrity (INT-CTXT), preventing both passive observation and active tampering of
+stored records.
 
-Each table receives a unique AES-128 key derived from the master database key:
+\section{Per-Table Key Derivation with Domain Separation}
+\label{sec:key-derivation}
+
+Each table requires two independent keys: an AES encryption key and an HMAC
+authentication key.  Deriving both from the same HMAC output would constitute
+\emph{key reuse}, so we apply domain separation by prepending distinct prefixes
+to the HMAC input.
 
 \begin{algorithm}[H]
-\caption{\textsc{Derive-Table-Key}($\text{table\_id}$): Derive AES key for table encryption.}
+\caption{\textsc{Derive-Table-Keys}($\text{table\_id}$): Derive AES and MAC keys with domain separation.}
 \label{alg:derive-key}
-$\text{id\_buf}[0..3] \leftarrow$ 32-bit encoding of table\_id \;
-$\text{derived}[0..31] \leftarrow \textsc{HMAC-SHA256}(K_{\text{master}}, \text{id\_buf}, 4)$ \;
-$\textsc{AES-Init}(\text{table\_ctx}[\text{table\_id}], \text{derived}[0..15])$ \tcp*{first 16 bytes}
+\tcp{AES key derivation}
+$\text{domain}_{\text{aes}} \leftarrow \texttt{"AES"} \,\|\, \text{LE32}(\text{table\_id})$ \tcp*{7-byte input}
+$K_{\text{aes}} \leftarrow \textsc{HMAC-SHA256}(K_{\text{master}}, \text{domain}_{\text{aes}})[0..15]$ \;
+$\textsc{AES-Init}(\text{aes\_ctx}[\text{table\_id}], K_{\text{aes}})$ \;
+\BlankLine
+\tcp{MAC key derivation}
+$\text{domain}_{\text{mac}} \leftarrow \texttt{"MAC"} \,\|\, \text{LE32}(\text{table\_id})$ \tcp*{7-byte input}
+$K_{\text{mac}} \leftarrow \textsc{HMAC-SHA256}(K_{\text{master}}, \text{domain}_{\text{mac}})$ \tcp*{full 32 bytes}
+$\textsc{HMAC-Init}(\text{mac\_ctx}[\text{table\_id}], K_{\text{mac}})$ \;
+\BlankLine
+$\textsc{Memset-Zero}(K_{\text{aes}}, K_{\text{mac}})$ \tcp*{zeroize intermediates}
 \end{algorithm}
 
-\section{Query Execution Pipeline}
+The master key $K_{\text{master}}$ is a 256-bit value generated from RDRAND at
+boot time. Since VaultOS has no persistent storage (yet), keys are ephemeral
+and regenerated each boot cycle.
+
+\section{Record Serialization}
+\label{sec:record-serde}
+
+Before encryption, a \texttt{record\_t} must be converted to a contiguous byte
+buffer.  The wire format uses little-endian encoding:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Field} & \textbf{Bytes} & \textbf{Description} \\
+\midrule
+\texttt{row\_id}      & 8      & Primary key (uint64) \\
+\texttt{table\_id}    & 4      & Table identifier (uint32) \\
+\texttt{field\_count} & 4      & Number of fields \\
+\midrule
+\multicolumn{3}{l}{\itshape Per-field (repeated \texttt{field\_count} times):} \\
+\texttt{type}  & 4              & Column type enum \\
+\texttt{data}  & variable       & Type-dependent payload \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Field data sizes by type:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Type}        & \textbf{Data encoding} \\
+\midrule
+\texttt{COL\_U64}, \texttt{COL\_I64} & 8 bytes (little-endian) \\
+\texttt{COL\_U32}    & 4 bytes \\
+\texttt{COL\_U8}, \texttt{COL\_BOOL} & 1 byte \\
+\texttt{COL\_STR}    & 2-byte length prefix $+$ \texttt{length} bytes \\
+\texttt{COL\_BLOB}   & 4-byte length prefix $+$ \texttt{length} bytes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Maximum serialized size is bounded by \texttt{MAX\_RECORD\_SIZE} (4096 bytes).
+Both \textsc{Record-Serialize} and \textsc{Record-Deserialize} run in $\BigO(f)$
+where $f$ is the field count, with bounds checking at every step.
+
+\section{Encrypt-then-MAC Pipeline}
+\label{sec:encrypt-pipeline}
+
+Each record stored in the B-tree is wrapped in an \texttt{encrypted\_record\_t}:
+
+\begin{lstlisting}[language=C,frame=single,basicstyle=\ttfamily\small]
+typedef struct {
+    uint8_t   iv[16];         /* Random IV for AES-CBC */
+    uint8_t  *ciphertext;     /* Encrypted serialized record */
+    uint32_t  ciphertext_len; /* Length (PKCS7-padded) */
+    uint8_t   mac[32];        /* HMAC-SHA256(IV || ciphertext) */
+    uint64_t  row_id;         /* Plaintext key for B-tree */
+    uint32_t  table_id;       /* Table this belongs to */
+} encrypted_record_t;
+\end{lstlisting}
+
+\begin{algorithm}[H]
+\caption{\textsc{Record-Encrypt}($\text{rec}$, $\text{table\_id}$): Encrypt a record for storage.}
+\label{alg:record-encrypt}
+\tcp{Step 1: Serialize}
+$\text{plain}[0..n{-}1] \leftarrow \textsc{Record-Serialize}(\text{rec})$ \;
+\BlankLine
+\tcp{Step 2: PKCS7 pad to AES block boundary}
+$m \leftarrow \lceil n / 16 \rceil \times 16$ \;
+$\textsc{PKCS7-Pad}(\text{plain}, n, m)$ \;
+\BlankLine
+\tcp{Step 3: Random IV}
+$\text{iv}[0..15] \leftarrow \textsc{Random-Bytes}(16)$ \;
+\BlankLine
+\tcp{Step 4: AES-CBC encrypt (see \S\ref{sec:cbc})}
+$\text{ct}[0..m{-}1] \leftarrow \textsc{AES-CBC-Encrypt}(\text{aes\_ctx}[\text{table\_id}], \text{iv}, \text{plain}, m)$ \;
+\BlankLine
+\tcp{Step 5: Authenticate (Encrypt-then-MAC)}
+$\sigma \leftarrow \textsc{HMAC-Compute}(\text{mac\_ctx}[\text{table\_id}],\; \text{iv} \,\|\, \text{ct})$ \;
+\BlankLine
+\tcp{Step 6: Build encrypted record}
+$\text{enc} \leftarrow \{\ \text{iv},\ \text{ct},\ m,\ \sigma,\ \text{rec.row\_id},\ \text{table\_id}\ \}$ \;
+$\textsc{B-Tree-Insert}(\text{index}[\text{table\_id}],\ \text{rec.row\_id},\ \text{enc})$ \;
+$\textsc{Memset-Zero}(\text{plain})$ \tcp*{zeroize plaintext buffer}
+\end{algorithm}
 
 \begin{figure}[htb]
 \centering
 \begin{tikzpicture}[
-  box/.style={draw,thick,rounded corners=3pt,minimum width=2.2cm,
+  box/.style={draw,thick,rounded corners=3pt,minimum width=1.9cm,
     minimum height=0.7cm,font=\sffamily\footnotesize,fill=blue!8},
+  sec/.style={draw,thick,rounded corners=3pt,minimum width=1.9cm,
+    minimum height=0.7cm,font=\sffamily\footnotesize,fill=green!12},
   arr/.style={->,>=Stealth,thick},
 ]
-\node[box]                       (tok) {Tokenize};
-\node[box,right=0.5cm of tok]    (par) {Parse};
-\node[box,right=0.5cm of par]    (cap) {Cap Check};
-\node[box,right=0.5cm of cap]    (exe) {Execute};
-\node[box,right=0.5cm of exe]    (enc) {Encrypt};
-\node[box,right=0.5cm of enc]    (res) {Result};
-\draw[arr] (tok) -- (par);
-\draw[arr] (par) -- (cap);
-\draw[arr] (cap) -- (exe);
-\draw[arr] (exe) -- (enc);
-\draw[arr] (enc) -- (res);
+\node[box]                       (rec) {Record};
+\node[box,right=0.4cm of rec]   (ser) {Serialize};
+\node[box,right=0.4cm of ser]   (pad) {PKCS7 Pad};
+\node[sec,right=0.4cm of pad]   (enc) {AES-CBC};
+\node[sec,right=0.4cm of enc]   (mac) {HMAC};
+\node[box,right=0.4cm of mac]   (sto) {B-Tree};
+\draw[arr] (rec) -- (ser);
+\draw[arr] (ser) -- (pad);
+\draw[arr] (pad) -- (enc);
+\draw[arr] (enc) -- (mac);
+\draw[arr] (mac) -- (sto);
+\node[above=0.15cm of enc,font=\sffamily\tiny\itshape] {random IV};
 \end{tikzpicture}
-\caption{Query execution pipeline. Capability checks occur before any data access.}
+\caption{Encrypt-then-MAC pipeline for record insertion. Green nodes indicate
+cryptographic operations.}
+\label{fig:encrypt-pipeline}
+\end{figure}
+
+\section{Verify-then-Decrypt Pipeline}
+\label{sec:decrypt-pipeline}
+
+On read, the MAC is verified \emph{before} any decryption occurs.  This is
+essential: attempting to decrypt tampered ciphertext could produce chosen-plaintext
+oracle attacks if error messages leak information.
+
+\begin{algorithm}[H]
+\caption{\textsc{Record-Decrypt}($\text{enc}$, $\text{table\_id}$): Verify MAC then decrypt.}
+\label{alg:record-decrypt}
+\tcp{Step 1: Recompute MAC}
+$\sigma' \leftarrow \textsc{HMAC-Compute}(\text{mac\_ctx}[\text{table\_id}],\; \text{enc.iv} \,\|\, \text{enc.ct})$ \;
+\BlankLine
+\tcp{Step 2: Constant-time verification (see \S\ref{sec:ct-verify})}
+\If{$\neg\,\textsc{HMAC-Verify}(\text{enc.mac},\; \sigma',\; 32)$}{
+  \textbf{log} ``MAC verification failed for row enc.row\_id'' \;
+  \Return \textsc{NULL} \tcp*{reject tampered record}
+}
+\BlankLine
+\tcp{Step 3: AES-CBC decrypt}
+$\text{padded}[0..m{-}1] \leftarrow \textsc{AES-CBC-Decrypt}(\text{aes\_ctx}[\text{table\_id}],\; \text{enc.iv},\; \text{enc.ct},\; m)$ \;
+\BlankLine
+\tcp{Step 4: Remove PKCS7 padding}
+$n \leftarrow \textsc{PKCS7-Unpad}(\text{padded}, m)$ \;
+\If{$n = 0$}{\Return \textsc{NULL} \tcp*{invalid padding}}
+\BlankLine
+\tcp{Step 5: Deserialize}
+$\text{rec} \leftarrow \textsc{Record-Deserialize}(\text{padded}[0..n{-}1])$ \;
+$\textsc{Memset-Zero}(\text{padded})$ \tcp*{zeroize decrypted buffer}
+\Return $\text{rec}$ \;
+\end{algorithm}
+
+\begin{theorem}[Encrypt-then-MAC Security]
+Let $\mathcal{E}$ be AES-128-CBC (IND-CPA secure) and $\mathcal{M}$ be
+HMAC-SHA256 (SUF-CMA secure).  The Encrypt-then-MAC composition
+$\Pi = (\mathcal{E}, \mathcal{M})$ achieves both IND-CPA confidentiality
+and INT-CTXT ciphertext integrity, provided the encryption and MAC keys
+are independent~\emph{(guaranteed by domain-separated derivation,
+Algorithm~\ref{alg:derive-key})}.
+\end{theorem}
+
+\noindent The decrypt buffer is a static kernel variable, safe because VaultOS
+is single-threaded.  All plaintext buffers are zeroed after use to limit the
+window of exposure in physical memory.
+
+\begin{remark}[Single-Threaded Precondition]
+The use of a static decrypt buffer in Algorithm~\ref{alg:record-decrypt} relies
+on the invariant that VaultOS never preempts a thread while a database operation
+is in progress.  If future versions introduce preemptive multitasking or kernel
+threads, the decrypt pipeline must be modified to use per-context buffers
+(e.g., allocated on the caller's stack or from a per-CPU slab), or protected by
+a spinlock.  Violating this precondition would allow a concurrent query to
+overwrite a partially-filled plaintext buffer, leading to data corruption or
+information leakage across security domains.
+\end{remark}
+
+\section{Constant-Time Audit Logging}
+\label{sec:audit-ct}
+
+The audit subsystem writes to \texttt{AuditTable} for every INSERT, DELETE,
+and UPDATE operation.  Naive string handling leaks information about the
+action and result strings through execution timing.  VaultOS pads all audit
+strings to the fixed maximum length before serialization:
+
+\begin{algorithm}[H]
+\caption{\textsc{Audit-Log}($\text{pid}$, $\text{action}$, $\text{target\_id}$, $\text{result}$): Constant-time audit write.}
+\label{alg:audit-log}
+$\text{padded\_action}[0..\textsc{MaxStr}] \leftarrow \mathbf{0}^{\textsc{MaxStr}+1}$ \;
+$\text{padded\_result}[0..\textsc{MaxStr}] \leftarrow \mathbf{0}^{\textsc{MaxStr}+1}$ \;
+$\textsc{Memcpy}(\text{padded\_action},\; \text{action},\; \min(|\text{action}|, \textsc{MaxStr}))$ \;
+$\textsc{Memcpy}(\text{padded\_result},\; \text{result},\; \min(|\text{result}|, \textsc{MaxStr}))$ \;
+\BlankLine
+$\text{rec} \leftarrow \textsc{New-Record}(\textsc{AuditTable})$ \;
+$\text{rec.fields} \leftarrow [\text{row\_id},\; \text{timestamp},\; \text{pid},\;
+  \text{padded\_action},\; \text{target\_id},\; \text{padded\_result}]$ \;
+$\textsc{Record-Encrypt}(\text{rec},\; \textsc{TABLE\_ID\_AUDIT})$ \;
+$\textsc{Memset-Zero}(\text{padded\_action},\; \text{padded\_result})$ \;
+\end{algorithm}
+
+By always writing $\textsc{MaxStr} = 255$ bytes regardless of actual string length,
+the serialization, padding, encryption, and MAC computation all operate on identically
+sized inputs, eliminating timing side-channels in the audit path.
+
+\section{Query Execution Pipeline}
+\label{sec:query-pipeline}
+
+With Encrypt-then-MAC active, the query pipeline includes cryptographic operations
+at both ends:
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,thick,rounded corners=3pt,minimum width=1.8cm,
+    minimum height=0.7cm,font=\sffamily\footnotesize,fill=blue!8},
+  sec/.style={draw,thick,rounded corners=3pt,minimum width=1.8cm,
+    minimum height=0.7cm,font=\sffamily\footnotesize,fill=green!12},
+  arr/.style={->,>=Stealth,thick},
+  lab/.style={font=\sffamily\tiny\itshape,text=gray},
+]
+% SELECT path
+\node[lab] at (-1.2, 0.45) {SELECT:};
+\node[box]                       (tok) {Tokenize};
+\node[box,right=0.35cm of tok]   (par) {Parse};
+\node[box,right=0.35cm of par]   (exe) {B-Tree Scan};
+\node[sec,right=0.35cm of exe]   (ver) {MAC Verify};
+\node[sec,right=0.35cm of ver]   (dec) {Decrypt};
+\node[box,right=0.35cm of dec]   (fil) {WHERE};
+\node[box,right=0.35cm of fil]   (res) {Result};
+\draw[arr] (tok) -- (par);
+\draw[arr] (par) -- (exe);
+\draw[arr] (exe) -- (ver);
+\draw[arr] (ver) -- (dec);
+\draw[arr] (dec) -- (fil);
+\draw[arr] (fil) -- (res);
+
+% INSERT path
+\node[lab] at (-1.2, -1.15) {INSERT:};
+\node[box,below=0.8cm of tok]    (tok2) {Tokenize};
+\node[box,right=0.35cm of tok2]  (par2) {Parse};
+\node[box,right=0.35cm of par2]  (ser)  {Serialize};
+\node[sec,right=0.35cm of ser]   (enc)  {Encrypt};
+\node[sec,right=0.35cm of enc]   (mac)  {MAC};
+\node[box,right=0.35cm of mac]   (sto)  {B-Tree};
+\node[box,right=0.35cm of sto]   (aud)  {Audit};
+\draw[arr] (tok2) -- (par2);
+\draw[arr] (par2) -- (ser);
+\draw[arr] (ser) -- (enc);
+\draw[arr] (enc) -- (mac);
+\draw[arr] (mac) -- (sto);
+\draw[arr] (sto) -- (aud);
+\end{tikzpicture}
+\caption{Query execution pipelines for SELECT and INSERT.  Green nodes indicate
+cryptographic operations.  UPDATE combines both paths: decrypt$\to$modify$\to$re-encrypt
+with a fresh IV.}
 \label{fig:query-pipeline}
 \end{figure}
+
+\noindent For UPDATE queries, the pipeline decrypts matching records, applies field
+modifications in plaintext, then re-encrypts with a fresh random IV and recomputed MAC.
+This ensures that updating a record produces completely different ciphertext even if
+the plaintext change is minimal (semantic security).
 
 % =============================================================================
 \chapter{Query Parser}
@@ -1372,6 +1704,16 @@ The parser accepts the following BNF grammar:
 <cond>    ::= <ident> <op> <value>
 <op>      ::= '=' | '!=' | '<' | '>' | '<=' | '>='
 \end{lstlisting}
+
+\begin{remark}[No DDL Support]
+VaultOS does not support Data Definition Language statements
+(\texttt{CREATE TABLE}, \texttt{DROP TABLE}, \texttt{ALTER TABLE}).
+The six system tables are defined at compile time in
+\texttt{db\_init\_system\_tables()} and cannot be created or destroyed at
+runtime.  This is by design: the table schemas are part of the kernel's
+security invariants, and allowing runtime schema modification would
+undermine the static guarantees provided by the capability system.
+\end{remark}
 
 \section{Recursive-Descent Parser}
 
@@ -1636,11 +1978,532 @@ The keyboard driver processes Scan Code Set~1, converting scancodes to ASCII via
 128-entry lookup table. It handles Shift and Caps Lock modifiers and buffers input in
 a 256-byte ring buffer for consumption by \texttt{keyboard\_getchar()}.
 
+\section{PS/2 Mouse}
+\label{sec:mouse}
+
+The mouse driver handles IRQ12 via the 8042 PS/2 controller (data port \hex{60},
+command port \hex{64}). Initialization enables the auxiliary port, sets sample rate to
+100~Hz, and enables data reporting. Each mouse event produces a 3-byte packet:
+
+\begin{center}
+\begin{tabular}{@{}cl@{}}
+\toprule
+\textbf{Byte} & \textbf{Contents} \\
+\midrule
+0 & Flags: buttons (bits 0--2), sign bits (4--5), overflow (6--7) \\
+1 & $\Delta x$ (9-bit signed, sign in byte~0 bit~4) \\
+2 & $\Delta y$ (9-bit signed, sign in byte~0 bit~5) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The driver accumulates bytes in a 3-byte state machine (triggered by the byte~0 alignment
+bit~3) and pushes completed packets into a ring buffer. The GUI event loop calls
+\texttt{mouse\_poll()} to dequeue packets and update cursor coordinates, clamped to
+screen bounds.
+
 \section{8$\times$16 Bitmap Font}
 
 The font data is a compile-time constant: 256 glyphs $\times$ 16 bytes per glyph $=
 4{,}096$ bytes. Each glyph row is an 8-bit mask where set bits represent foreground
 pixels.
+
+% =============================================================================
+% PART IV: USER INTERFACE
+% =============================================================================
+\part{User Interface}
+
+% -----------------------------------------------------------------------------
+\chapter{VaultShell}
+\label{ch:shell}
+
+VaultShell is the primary user interface of \VaultOS{}: a text-mode shell that accepts
+SQL queries and friendly commands, with syntax highlighting, tab completion, command
+history, and a structured TUI layout.
+
+% -----------------------------------------------------------------------------
+\section{Text User Interface}
+\label{sec:tui}
+
+The shell screen is divided into four regions (Figure~\ref{fig:tui-layout}):
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[
+  region/.style={draw,thick,minimum width=10cm,font=\sffamily\small},
+]
+\node[region,fill=blue!30,minimum height=0.6cm,text=white] (title)
+  {Title Bar: ``VaultOS v0.1'' \quad\quad PID: 1 \quad State: Running};
+\node[region,fill=gray!5,minimum height=4cm,below=0pt of title] (content)
+  {Content Area (scrollable output + input prompt)};
+\node[region,fill=blue!10,minimum height=0.6cm,below=0pt of content] (status)
+  {Status Bar: Uptime \quad Heap \quad Tables \quad Processes};
+\node[region,fill=gray!15,minimum height=0.6cm,below=0pt of status] (fkeys)
+  {F1:Help \quad F2:Tables \quad F3:Status \quad F4:Quick \quad F5:Clear};
+\end{tikzpicture}
+\caption{VaultShell TUI layout. The status bar refreshes every 500\,ms.}
+\label{fig:tui-layout}
+\end{figure}
+
+\noindent
+The TUI layout is computed from the framebuffer dimensions: title bar occupies row~0,
+F-key bar occupies the last row, status bar the row above it, and the content area fills
+all remaining rows. The status bar updates asynchronously during the line editor's idle
+loop.
+
+% -----------------------------------------------------------------------------
+\section{Line Editor}
+\label{sec:line-editor}
+
+The line editor provides in-place editing with visual feedback:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Cursor movement}: Left/Right, Home/End.
+  \item \textbf{Editing}: character insert at cursor, Backspace, Delete, Escape (clear).
+  \item \textbf{History}: Up/Down arrows navigate a 32-entry ring buffer of previous commands.
+        The current input is saved before entering history mode and restored when navigating
+        past the most recent entry.
+  \item \textbf{Syntax highlighting}: each character is colored in real time:
+    \begin{itemize}
+      \item SQL keywords and friendly verbs: highlight color (gold).
+      \item Table aliases (\texttt{procs}, \texttt{caps}, etc.): cyan.
+      \item String literals (single-quoted): green.
+      \item Numbers: cyan. Operators (\texttt{=}, \texttt{<}, \texttt{>}, \texttt{*}): yellow.
+    \end{itemize}
+  \item \textbf{Block cursor}: the character at the cursor position is rendered with
+        inverted foreground/background colors.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Display Formatter}
+\label{sec:display}
+
+Query results are rendered as colored columnar tables. The formatter handles three cases:
+\textsc{Show Tables} (table list with row counts), \textsc{Describe} (column schema with
+types and flags), and general \textsc{Select} results (aligned columns with type-aware
+formatting). Errors are displayed in red with the error message.
+
+% -----------------------------------------------------------------------------
+\section{Algorithm: Context-Aware Tab Completion}
+\label{sec:completion}
+
+Tab completion analyzes the tokens before the cursor to determine context.
+
+\begin{algorithm}[H]
+\caption{\textsc{Complete-Find}($\text{line}$, $\text{cursor\_pos}$): context-aware completion.}
+\label{alg:complete}
+$w \leftarrow$ extract word fragment before cursor\_pos \;
+\If{$|w| = 0$}{\Return $\emptyset$}
+$\text{tokens}[] \leftarrow$ tokenize line up to start of $w$ \;
+\BlankLine
+\tcp{Context: verb + table $\Rightarrow$ complete column names}
+\If{$|\text{tokens}| \geq 2$ \And is\_friendly\_verb(tokens[0]) \And $w$ has no \texttt{=}}{
+  $\text{schema} \leftarrow$ resolve\_table(tokens[1]) \;
+  \If{schema $\neq$ \Nil}{
+    \For{each column $c$ in schema}{
+      \If{$c.\field{name}$ starts with $w$ (case-insensitive)}{
+        add\_match($c.\field{name}$ + ``='') \;
+      }
+    }
+    \If{matches $\neq \emptyset$}{\Return matches}
+  }
+}
+\BlankLine
+\tcp{Context: ``create'' $\Rightarrow$ complete object types}
+\If{$|\text{tokens}| = 1$ \And tokens[0] = ``create''}{
+  match $w$ against \{note, file, config, script, key\} \;
+}
+\tcp{Context: ``spawn'' $\Rightarrow$ complete program names}
+\If{$|\text{tokens}| = 1$ \And tokens[0] = ``spawn''}{
+  match $w$ against builtin programs $\cup$ \{``script:''\} \;
+}
+\BlankLine
+\tcp{Context: verb alone $\Rightarrow$ complete table names + aliases}
+\If{$|\text{tokens}| = 1$ \And is\_friendly\_verb(tokens[0])}{
+  match $w$ against table names $\cup$ aliases \;
+}
+\BlankLine
+\tcp{Default: match against all keywords, verbs, tables, aliases}
+match $w$ against SQL keywords $\cup$ friendly verbs $\cup$ table names $\cup$ aliases \;
+compute\_common\_prefix(matches) \;
+\Return matches \;
+\end{algorithm}
+
+\noindent
+When a single match is found, the remaining characters plus a trailing space are inserted.
+When multiple matches exist, the longest common prefix is inserted and all candidates are
+displayed below the input line in cyan on dark gray.
+
+% =============================================================================
+\chapter{Friendly Command Layer}
+\label{ch:friendly}
+
+The friendly command layer provides a natural-language-inspired interface that translates
+user commands into SQL queries, eliminating the need to know SQL syntax for common
+operations.
+
+% -----------------------------------------------------------------------------
+\section{Design: Commands as SQL Generators}
+\label{sec:friendly-design}
+
+\begin{definition}[Friendly Command]
+A friendly command $F(v, t, \mathit{args})$ where $v$ is a verb, $t$ is a table reference,
+and $\mathit{args}$ is a (possibly empty) sequence of key=value pairs, is a function that
+produces a SQL query string $Q$ such that $\texttt{db\_execute}(Q, \mathit{pid})$ achieves
+the intended semantics of~$F$.
+\end{definition}
+
+\noindent
+This design preserves a critical invariant: \emph{the kernel database engine is never
+modified}. The friendly layer is purely a shell-side string transformation, ensuring that
+all security properties (capability checks, encryption, audit logging) remain intact.
+
+% -----------------------------------------------------------------------------
+\section{Command-to-SQL Translation}
+\label{sec:friendly-commands}
+
+Table~\ref{tab:friendly-cmds} lists the friendly verbs and their SQL translations.
+
+\begin{table}[htb]
+\centering
+\caption{Friendly commands and their SQL translations.}
+\label{tab:friendly-cmds}
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Command} & \textbf{SQL Generated} & \textbf{Notes} \\
+\midrule
+\texttt{tables}              & \texttt{SHOW TABLES}              & \\
+\texttt{show <table>}        & \texttt{SELECT * FROM <T>}        & Alias resolved \\
+\texttt{info <table>}        & \texttt{DESCRIBE <T>}             & \\
+\texttt{find <T> col=val}    & \texttt{SELECT * FROM <T> WHERE col = val} & Multiple conditions with AND \\
+\texttt{count <T>}           & \texttt{SELECT * FROM <T>}        & Displays row count \\
+\texttt{add <T> c=v c=v}     & \texttt{INSERT INTO <T> (...) VALUES (...)} & \\
+\texttt{del <T> col=val}     & \texttt{DELETE FROM <T> WHERE col = val}    & \\
+\texttt{set <T> c=v where k=v} & \texttt{UPDATE <T> SET c=v WHERE k=v}    & \\
+\texttt{create <type> <name> [data]} & \texttt{INSERT INTO ObjectTable ...} & \\
+\texttt{open <name>}         & \texttt{SELECT * FROM ObjectTable WHERE name='...'} & \\
+\texttt{list [type]}         & \texttt{SELECT * FROM ObjectTable [WHERE type='...']} & \\
+\texttt{rm <name>}           & \texttt{DELETE FROM ObjectTable WHERE name='...'} & \\
+\texttt{ps}                  & \texttt{SELECT * FROM ProcessTable} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{Table Aliases}
+\label{sec:aliases}
+
+To reduce typing, the alias system maps short names to full table names:
+
+\begin{center}
+\begin{tabular}{@{}ll@{\qquad}ll@{\qquad}ll@{}}
+\toprule
+\textbf{Alias} & \textbf{Table} & \textbf{Alias} & \textbf{Table} & \textbf{Alias} & \textbf{Table} \\
+\midrule
+\texttt{procs}   & ProcessTable    & \texttt{caps}    & CapabilityTable & \texttt{objects} & ObjectTable \\
+\texttt{msgs}    & MessageTable    & \texttt{audit}   & AuditTable      & \texttt{sys}     & SystemTable \\
+\texttt{config}  & SystemTable     &                  &                 &                  & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Aliases are resolved before SQL generation by \texttt{friendly\_resolve\_alias()}, allowing
+commands like \texttt{show procs} instead of \texttt{SELECT * FROM ProcessTable}. Aliases
+are also syntax-highlighted in cyan in the line editor.
+
+% -----------------------------------------------------------------------------
+\section{Script Engine}
+\label{sec:scripts}
+
+Scripts are sequences of commands stored as rows in the ObjectTable. Each line is a
+separate row with \texttt{type = 'script'} and the script name in the \texttt{name} field.
+Lines are ordered by \texttt{obj\_id} (monotonically increasing from sequential inserts).
+
+\begin{observation}[Script Line Ordering]
+The \texttt{size} field in ObjectTable cannot be used for line ordering because the query
+engine (line~479 of \texttt{query.c}) unconditionally overwrites it with the length of
+\texttt{data}. Sequential inserts produce monotonically increasing \texttt{obj\_id} values
+in the B-tree, and \textsc{B-Tree-Scan} returns keys in order, guaranteeing correct
+line ordering without an explicit sequence number.
+\end{observation}
+
+\begin{algorithm}[H]
+\caption{\textsc{Script-Save}($\text{name}$): interactive multi-line script recording.}
+\label{alg:script-save}
+\texttt{DELETE FROM ObjectTable WHERE name = name AND type = 'script'} \;
+$\text{line\_num} \leftarrow 0$ \;
+\While{$\text{line\_num} < \const{Max\_Script\_Lines}$}{
+  print ``\texttt{\ \ N>\ }'' \;
+  $\text{line} \leftarrow$ \textsc{Line-Read}() \;
+  \If{line = ``end''}{break}
+  \If{line is empty}{continue}
+  \texttt{INSERT INTO ObjectTable (name, type, data) VALUES (name, 'script', line)} \;
+  $\text{line\_num} \leftarrow \text{line\_num} + 1$ \;
+}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{\textsc{Script-Run}($\text{name}$): execute a stored script.}
+\label{alg:script-run}
+$\text{rows} \leftarrow$ \texttt{SELECT * FROM ObjectTable WHERE name = name AND type = 'script'} \;
+\If{rows is empty}{\Error ``Script not found''}
+\For{each row $r$ in rows (ordered by obj\_id)}{
+  $\text{cmd} \leftarrow r.\field{data}$ \;
+  \If{\textsc{Friendly-Translate}(cmd) succeeds}{
+    $\text{sql} \leftarrow$ translated result \;
+  }\Else{
+    $\text{sql} \leftarrow$ cmd \tcp{pass through as raw SQL}
+  }
+  $\text{result} \leftarrow \texttt{db\_execute}(\text{sql}, \text{pid})$ \;
+  display result \;
+}
+\end{algorithm}
+
+% -----------------------------------------------------------------------------
+\section{Process Management Commands}
+\label{sec:proc-cmds}
+
+Process management commands are built-in shell operations that invoke kernel process APIs
+directly, since they require function pointer arguments that cannot be expressed as SQL.
+
+\paragraph{spawn.}
+The \texttt{spawn} command creates a new process from a registry of built-in programs or
+from a stored script. For scripts, the entry point reads the script name from the
+process name field (\texttt{process\_t.name}), avoiding global state and race conditions:
+
+\begin{lstlisting}[caption={Script process entry point.}]
+void script_process_entry(void) {
+    process_t *self = process_get_current();
+    const char *name = self->name + 7; /* skip "script:" */
+    script_run(name);
+    process_exit(self, 0);
+    for (;;) hlt();
+}
+\end{lstlisting}
+
+\paragraph{kill.}
+Terminates a process by PID. The shell process is protected: attempting to kill the
+shell's own PID is rejected with an error message.
+
+\paragraph{msg / inbox.}
+\texttt{msg <pid> <text>} inserts a row into MessageTable with the destination PID and
+payload. \texttt{inbox} queries MessageTable for messages addressed to the current process.
+
+\paragraph{monitor.}
+The \texttt{monitor} built-in program is a background process that runs in an infinite
+loop, inserting a system stats record (uptime, heap usage) into AuditTable every 5
+seconds. It demonstrates preemptive multitasking and database access from concurrent
+processes.
+
+% -----------------------------------------------------------------------------
+\section{Algorithm: Friendly-Translate}
+\label{sec:friendly-algo}
+
+\begin{algorithm}[H]
+\caption{\textsc{Friendly-Translate}($\text{input}$, $\text{sql\_buf}$): convert a friendly command to SQL.}
+\label{alg:friendly}
+$\text{verb} \leftarrow$ first token of input \;
+$\text{rest} \leftarrow$ remaining tokens \;
+\BlankLine
+\uIf{verb = ``tables''}{
+  $\text{sql\_buf} \leftarrow$ ``\texttt{SHOW TABLES}'' \;
+}\uElseIf{verb = ``show''}{
+  $t \leftarrow$ resolve\_alias(next token) \;
+  $\text{sql\_buf} \leftarrow$ ``\texttt{SELECT * FROM } $t$'' \;
+}\uElseIf{verb = ``find''}{
+  $t \leftarrow$ resolve\_alias(next token) \;
+  parse key=value pairs from rest into WHERE clauses with AND \;
+  $\text{sql\_buf} \leftarrow$ ``\texttt{SELECT * FROM } $t$ \texttt{ WHERE ...}'' \;
+}\uElseIf{verb = ``add''}{
+  $t \leftarrow$ resolve\_alias(next token) \;
+  parse key=value pairs into column and value lists \;
+  $\text{sql\_buf} \leftarrow$ ``\texttt{INSERT INTO } $t$ \texttt{ (...) VALUES (...)}'' \;
+}\uElseIf{verb $\in$ \{``create'', ``open'', ``list'', ``rm'', ``ps'', \ldots\}}{
+  generate appropriate SQL for ObjectTable or ProcessTable \;
+}\Else{
+  \Return \False \tcp{not a friendly command}
+}
+\Return \True \;
+\end{algorithm}
+
+% =============================================================================
+\chapter{Graphical Desktop}
+\label{ch:gui}
+
+\VaultOS{} includes a graphical desktop environment built on top of the GOP framebuffer.
+The GUI provides windowed applications for database queries, table browsing, process
+management, and system monitoring. The user can switch between TUI and GUI modes with
+the \texttt{gui} command.
+
+% -----------------------------------------------------------------------------
+\section{Graphics Subsystem}
+\label{sec:graphics}
+
+The graphics layer implements double buffering over the GOP linear framebuffer:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Back buffer}: a heap-allocated buffer of $W \times H \times 4$ bytes
+        (32-bit ARGB). All drawing operations target this buffer.
+  \item \textbf{Flip}: \texttt{gfx\_flip()} copies the back buffer to the framebuffer
+        in a single \texttt{memcpy}. Partial flips (\texttt{gfx\_flip\_rect}) copy only
+        the dirty region to minimize bandwidth.
+\end{itemize}
+
+\noindent
+Primitive operations include \texttt{gfx\_fill\_rect()}, \texttt{gfx\_draw\_rect()} (outline),
+\texttt{gfx\_draw\_hline()}, \texttt{gfx\_draw\_text()} (using the 8$\times$16 bitmap font),
+and pixel-level access via \texttt{gfx\_putpixel()}.
+
+\begin{definition}[Double Buffer Memory]
+For a $1024 \times 768$ display at 32\,bpp, each buffer requires $1024 \times 768 \times 4
+= 3{,}145{,}728$ bytes ($\approx 3$\,MiB). The heap is expanded by 15\,MiB upon GUI launch
+to accommodate the back buffer, window canvases, and widget data.
+\end{definition}
+
+\noindent
+The back buffer is allocated via \texttt{kmalloc()} from the kernel heap
+(Chapter~\ref{ch:heap}), not from a dedicated video memory pool.  For the
+default $1024 \times 768$ resolution this consumes $\approx 3$\,MiB of the
+15\,MiB GUI heap expansion.  The remaining $\approx 12$\,MiB is available for
+window canvases, widget trees, and compositor state.
+
+% -----------------------------------------------------------------------------
+\section{Event System}
+\label{sec:events}
+
+The event system translates hardware inputs into a unified event queue:
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Event Type} & \textbf{Source} \\
+\midrule
+\texttt{EVT\_MOUSE\_DOWN/UP/MOVE} & PS/2 mouse packets \\
+\texttt{EVT\_KEY\_PRESS/RELEASE}  & PS/2 keyboard scancodes \\
+\texttt{EVT\_CLOSE}               & Window close button click \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+\texttt{event\_pump()} polls the mouse and keyboard drivers non-blockingly and enqueues
+events into a fixed-size ring buffer. The main loop calls \texttt{event\_poll()} to dequeue
+events for dispatch.
+
+% -----------------------------------------------------------------------------
+\section{Window Manager}
+\label{sec:wm}
+
+The window manager maintains an ordered list of windows (up to 8 simultaneous windows).
+Each window has:
+
+\begin{lstlisting}[caption={Window structure (simplified).}]
+typedef struct window {
+    uint32_t  id;
+    char      title[64];
+    int16_t   x, y;               /* screen position */
+    uint16_t  w, h;               /* total size */
+    uint16_t  client_w, client_h; /* client area */
+    uint32_t *canvas;             /* pixel buffer */
+    bool      focused, dragging;
+    widget_t *widgets;            /* widget linked list */
+    void (*on_event)(window_t *, gui_event_t *);
+    void (*on_paint)(window_t *);
+} window_t;
+\end{lstlisting}
+
+\noindent
+Window operations include:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Focus}: clicking a window brings it to front (z-order head).
+  \item \textbf{Drag}: clicking the title bar and moving the mouse repositions the window.
+  \item \textbf{Close}: clicking the ``X'' button sends \texttt{EVT\_CLOSE} to the window's
+        event handler, which calls \texttt{wm\_destroy\_window()}.
+  \item \textbf{Decorations}: the window manager draws a title bar (20\,px), 1\,px border,
+        and close button. The client area is below the title bar.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Compositor}
+\label{sec:compositor}
+
+The compositor renders the desktop each frame:
+
+\begin{algorithm}[H]
+\caption{\textsc{Compositor-Render}(): render one frame of the desktop.}
+\label{alg:compositor}
+clear back buffer to desktop background color \;
+\For{each window $w$ in bottom-to-top z-order}{
+  draw $w$'s border and title bar decorations \;
+  call $w$.\texttt{on\_paint}() to render widgets into $w$'s canvas \;
+  blit $w$'s canvas to back buffer at $(w.x, w.y)$ \;
+}
+draw mouse cursor (XOR blending for visibility) \;
+\texttt{gfx\_flip\_rect}(dirty region) \;
+\end{algorithm}
+
+\noindent
+The XOR-blended cursor ensures visibility against any background color. The compositor
+runs in the shell's main loop at approximately 60 iterations per second (limited by
+\texttt{hlt()} idle waits).
+
+% -----------------------------------------------------------------------------
+\section{Widget Toolkit}
+\label{sec:widgets}
+
+Four widget types are provided:
+
+\begin{center}
+\begin{tabular}{@{}lp{8cm}@{}}
+\toprule
+\textbf{Widget} & \textbf{Behavior} \\
+\midrule
+\texttt{Button}   & Click callback, hover highlight, text label \\
+\texttt{Label}    & Static text with configurable foreground/background \\
+\texttt{TextBox}  & Single-line text input with cursor, character insert/delete \\
+\texttt{ListView} & Scrollable item list with selection highlight, click-to-select,
+                    optional \texttt{on\_select} callback \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Widgets are stored as a linked list per window. \texttt{widget\_dispatch()} routes mouse
+and keyboard events to the appropriate widget based on hit testing. \texttt{widget\_draw\_all()}
+renders all widgets in a window's canvas.
+
+% -----------------------------------------------------------------------------
+\section{Desktop Applications}
+\label{sec:desktop-apps}
+
+The GUI provides four applications accessible from the taskbar menu:
+
+\paragraph{Query Console.}
+A SQL REPL with a textbox for query input, ``Execute'' and ``Template'' buttons, and a
+listview for results. Templates cycle through common queries (\texttt{SHOW TABLES},
+\texttt{SELECT * FROM SystemTable}, etc.).
+
+\paragraph{Table Browser.}
+A two-pane interface: the left pane lists all system tables (with Refresh), and the right
+pane shows either the table schema (click a table name) or query results (``View All''
+button). A search box supports \texttt{column=value} filtering.
+
+\paragraph{Process Manager.}
+Lists all processes from ProcessTable with Refresh, ``Spawn Monitor'' (creates a background
+monitoring process), and ``Kill'' buttons. The Kill button protects the shell process
+from self-termination.
+
+\paragraph{System Status.}
+Displays live system metrics: uptime, heap usage (used/free), table count, and CPU
+architecture. Labels update on each paint cycle.
+
+\paragraph{Taskbar.}
+The taskbar occupies the bottom 28 pixels: a ``VaultOS'' menu button on the left, window
+buttons in the center, and a status line (uptime + heap) on the right. Clicking a
+window button brings that window to the front.
 
 % =============================================================================
 % APPENDICES
@@ -1741,5 +2604,58 @@ The AES-NI hardware acceleration provides a $7.3$--$7.4\times$ speedup for datab
 record encryption and decryption. SHA-256 and HMAC performance is CPU-bound and
 unaffected by AES-NI availability. Capability validation (\textsc{Cap-Check}) benefits
 primarily from the validation cache, not hardware acceleration.
+
+\chapter{VaultShell Command Reference}
+\label{app:commands}
+
+\noindent
+\begin{small}
+\begin{tabular}{@{}llp{4.5cm}@{}}
+\toprule
+\textbf{Category} & \textbf{Command} & \textbf{Description} \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape Query Commands} \\
+& \texttt{tables}              & List all system tables \\
+& \texttt{show <table>}        & Display all rows \\
+& \texttt{info <table>}        & Show table schema \\
+& \texttt{find <T> col=val}    & Search rows \\
+& \texttt{count <table>}       & Count rows \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape Mutation Commands} \\
+& \texttt{add <T> col=val ...} & Insert a new row \\
+& \texttt{del <T> col=val}     & Delete matching rows \\
+& \texttt{set <T> c=v where k=v} & Update matching rows \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape Object Commands} \\
+& \texttt{create <type> <name>}& Create an object \\
+& \texttt{open <name>}         & View an object \\
+& \texttt{list [type]}         & List objects \\
+& \texttt{rm <name>}           & Delete an object \\
+& \texttt{cat <name>}          & Display contents \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape Script Commands} \\
+& \texttt{save <name>}         & Record a script \\
+& \texttt{run <name>}          & Execute a script \\
+& \texttt{scripts}             & List all scripts \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape Process Commands} \\
+& \texttt{ps}                  & List processes \\
+& \texttt{spawn <program>}     & Launch a program \\
+& \texttt{spawn script:<name>} & Run script as process \\
+& \texttt{kill <pid>}          & Terminate a process \\
+& \texttt{msg <pid> <text>}    & Send a message \\
+& \texttt{inbox}               & View messages \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape System \& SQL Commands} \\
+& \texttt{help / status / clear} & Built-in utilities \\
+& \texttt{gui}                 & Launch GUI desktop \\
+& \texttt{SELECT / INSERT / ...} & Raw SQL pass-through \\
+& \texttt{GRANT / REVOKE}      & Capability management \\
+\midrule
+\multicolumn{3}{@{}l}{\itshape F-Key Shortcuts} \\
+& \texttt{F1--F5}             & Help, Tables, Status, Quick, Clear \\
+\bottomrule
+\end{tabular}
+\end{small}
 
 \end{document}

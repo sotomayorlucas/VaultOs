@@ -1,6 +1,7 @@
 #include "line_editor.h"
 #include "history.h"
 #include "complete.h"
+#include "friendly.h"
 #include "tui.h"
 #include "../kernel/drivers/keyboard.h"
 #include "../kernel/drivers/framebuffer.h"
@@ -16,6 +17,12 @@ static const char *highlight_keywords[] = {
     "SHOW", "TABLES", "DESCRIBE",
     "GRANT", "REVOKE", "ON", "TO",
     "READ", "WRITE", "ALL", "OR",
+    /* Friendly command verbs */
+    "INFO", "FIND", "COUNT", "ADD", "DEL",
+    "CREATE", "OPEN", "LIST", "RM", "CAT",
+    "PS", "KILL", "SPAWN", "MSG", "INBOX",
+    "SAVE", "RUN", "SCRIPTS",
+    "SECURITY", "CRYPTO", "AUDIT",
     NULL
 };
 
@@ -70,6 +77,15 @@ static uint32_t get_char_color(uint32_t pos) {
 
         if (is_keyword(ed.buf + ws, we - ws))
             return COLOR_VOS_HL;
+
+        /* Table aliases highlighted in cyan */
+        size_t wlen = we - ws;
+        const table_alias_t *al = friendly_get_aliases();
+        for (int i = 0; al[i].alias; i++) {
+            if (strlen(al[i].alias) == wlen &&
+                strncasecmp(al[i].alias, ed.buf + ws, wlen) == 0)
+                return COLOR_CYAN;
+        }
     }
 
     /* Operators in yellow */

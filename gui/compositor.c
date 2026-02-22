@@ -103,6 +103,12 @@ static void draw_window(window_t *win) {
     int16_t text_y = y + (TITLEBAR_HEIGHT - 16) / 2;
     gfx_draw_text(x + 6, text_y, win->title, TITLEBAR_TEXT, tb_color);
 
+    /* Minimize button [_] */
+    int16_t min_x = x + w - 2 * TITLEBAR_HEIGHT;
+    uint32_t min_bg = win->minimize_hovered ? 0xFF444466 : 0xFF333344;
+    gfx_fill_rect(min_x, y + 1, TITLEBAR_HEIGHT - 1, TITLEBAR_HEIGHT - 1, min_bg);
+    gfx_draw_char(min_x + 6, text_y, '_', TITLEBAR_TEXT, min_bg);
+
     /* Close button [X] */
     int16_t btn_x = x + w - TITLEBAR_HEIGHT;
     uint32_t close_bg = win->close_hovered ? CLOSE_BTN_HOVER : CLOSE_BTN_BG;

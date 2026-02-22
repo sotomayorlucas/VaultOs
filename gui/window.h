@@ -26,6 +26,8 @@ struct window {
     bool      dragging;
     int16_t   drag_ox, drag_oy;   /* Mouse offset during drag */
     bool      close_hovered;      /* Close button hover state */
+    bool      minimized;          /* Window is minimized (hidden) */
+    bool      minimize_hovered;   /* Minimize button hover state */
     win_event_fn on_event;
     win_paint_fn on_paint;
     void     *user_data;

@@ -26,6 +26,16 @@ typedef struct {
     uint32_t      field_count;
 } record_t;
 
+/* Encrypted record wrapper (Encrypt-then-MAC) */
+typedef struct {
+    uint8_t   iv[16];           /* Random IV for AES-CBC */
+    uint8_t  *ciphertext;       /* Encrypted serialized record */
+    uint32_t  ciphertext_len;   /* Length of ciphertext (PKCS7-padded) */
+    uint8_t   mac[32];          /* HMAC-SHA256(IV || ciphertext) */
+    uint64_t  row_id;           /* Plaintext row_id for B-tree key */
+    uint32_t  table_id;         /* Table this record belongs to */
+} encrypted_record_t;
+
 /* Set field helpers */
 void record_set_u64(record_t *rec, uint32_t idx, uint64_t val);
 void record_set_i64(record_t *rec, uint32_t idx, int64_t val);

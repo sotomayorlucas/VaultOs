@@ -27,8 +27,8 @@
 \newlabel{fig:architecture}{{1.1}{5}{VaultOS layered architecture. Each layer depends only on the layers below it}{figure.caption.5}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {1.5}Comparison with Traditional OS Designs}{5}{section.1.5}\protected@file@percent }
 \newlabel{sec:comparison}{{1.5}{5}{Comparison with Traditional OS Designs}{section.1.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1.2}{\ignorespaces VaultOS vs.\ POSIX-based operating systems.}}{5}{table.caption.6}\protected@file@percent }
-\newlabel{tab:comparison}{{1.2}{5}{VaultOS vs.\ POSIX-based operating systems}{table.caption.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1.2}{\ignorespaces VaultOS vs.\ POSIX-based operating systems.}}{6}{table.caption.6}\protected@file@percent }
+\newlabel{tab:comparison}{{1.2}{6}{VaultOS vs.\ POSIX-based operating systems}{table.caption.6}{}}
 \@writefile{toc}{\contentsline {chapter}{\numberline {2}System Bootstrap}{7}{chapter.2}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
@@ -141,8 +141,9 @@
 \@writefile{loa}{\addvspace {10\p@ }}
 \newlabel{ch:btree}{{9}{33}{B-Tree Index}{chapter.9}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {9.1}B-Tree Properties}{33}{section.9.1}\protected@file@percent }
+\newlabel{def:btree-order}{{9.1}{33}{B-Tree of Order $b$}{theorem.9.1}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {9.2}Node Structure}{33}{section.9.2}\protected@file@percent }
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.1}{\ignorespaces B-tree node structure.}}{33}{lstlisting.9.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9.1}{\ignorespaces B-tree node structure.}}{34}{lstlisting.9.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {9.3}Algorithm: \textsc  {B-Tree-Search}}{34}{section.9.3}\protected@file@percent }
 \@writefile{loa}{\contentsline {algocf}{\numberline {15}{\ignorespaces \textsc  {B-Tree-Search}($x$, $k$): Search for key $k$ in subtree rooted at $x$.}}{34}{algocf.15}\protected@file@percent }
 \newlabel{alg:btree-search}{{15}{34}{Algorithm: \textsc {B-Tree-Search}}{algocf.15}{}}
@@ -155,6 +156,9 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {9.1}{\ignorespaces B-tree node split: the median key is promoted to the parent.}}{35}{figure.caption.10}\protected@file@percent }
 \newlabel{fig:btree-split}{{9.1}{35}{B-tree node split: the median key is promoted to the parent}{figure.caption.10}{}}
 \newlabel{thm:btree-height}{{9.3}{35}{B-Tree Height Bound}{theorem.9.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.6}Algorithm: \textsc  {B-Tree-Delete} (Lazy)}{36}{section.9.6}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {18}{\ignorespaces \textsc  {B-Tree-Delete}($T$, $k$): Delete key $k$ from B-tree $T$ (lazy MVP).}}{36}{algocf.18}\protected@file@percent }
+\newlabel{alg:btree-delete}{{18}{36}{Algorithm: \textsc {B-Tree-Delete} (Lazy)}{algocf.18}{}}
 \@writefile{toc}{\contentsline {chapter}{\numberline {10}Auxiliary Data Structures}{37}{chapter.10}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
@@ -172,17 +176,17 @@
 \newlabel{ch:capabilities}{{11}{41}{Capability System}{chapter.11}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {11.1}Capability Token Structure}{41}{section.11.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {11.2}Algorithm: \textsc  {Cap-Create}}{41}{section.11.2}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {18}{\ignorespaces \textsc  {Cap-Create}($\text  {obj\_id}$, $\text  {type}$, $\text  {owner}$, $\text  {rights}$, $\text  {parent}$): Create and seal a new capability.}}{41}{algocf.18}\protected@file@percent }
-\newlabel{alg:cap-create}{{18}{41}{Algorithm: \textsc {Cap-Create}}{algocf.18}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {19}{\ignorespaces \textsc  {Cap-Create}($\text  {obj\_id}$, $\text  {type}$, $\text  {owner}$, $\text  {rights}$, $\text  {parent}$): Create and seal a new capability.}}{41}{algocf.19}\protected@file@percent }
+\newlabel{alg:cap-create}{{19}{41}{Algorithm: \textsc {Cap-Create}}{algocf.19}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {11.3}Algorithm: \textsc  {Cap-Validate} with Cache}{42}{section.11.3}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {19}{\ignorespaces \textsc  {Cap-Validate}($c$): Verify capability integrity using cache.}}{42}{algocf.19}\protected@file@percent }
-\newlabel{alg:cap-validate}{{19}{42}{Algorithm: \textsc {Cap-Validate} with Cache}{algocf.19}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {20}{\ignorespaces \textsc  {Cap-Validate}($c$): Verify capability integrity using cache.}}{42}{algocf.20}\protected@file@percent }
+\newlabel{alg:cap-validate}{{20}{42}{Algorithm: \textsc {Cap-Validate} with Cache}{algocf.20}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {11.4}Algorithm: \textsc  {Cap-Check}}{42}{section.11.4}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {20}{\ignorespaces \textsc  {Cap-Check}($\text  {pid}$, $\text  {obj\_id}$, $\text  {required\_rights}$): Check if process has required rights on object.}}{42}{algocf.20}\protected@file@percent }
-\newlabel{alg:cap-check}{{20}{42}{Algorithm: \textsc {Cap-Check}}{algocf.20}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {21}{\ignorespaces \textsc  {Cap-Check}($\text  {pid}$, $\text  {obj\_id}$, $\text  {required\_rights}$): Check if process has required rights on object.}}{42}{algocf.21}\protected@file@percent }
+\newlabel{alg:cap-check}{{21}{42}{Algorithm: \textsc {Cap-Check}}{algocf.21}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {11.5}Delegation and Revocation}{43}{section.11.5}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {21}{\ignorespaces \textsc  {Cap-Revoke}($\text  {owner\_pid}$, $\text  {cap\_id}$): Revoke a capability and cascade to children.}}{43}{algocf.21}\protected@file@percent }
-\newlabel{alg:cap-revoke}{{21}{43}{Delegation and Revocation}{algocf.21}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {22}{\ignorespaces \textsc  {Cap-Revoke}($\text  {owner\_pid}$, $\text  {cap\_id}$): Revoke a capability and cascade to children.}}{43}{algocf.22}\protected@file@percent }
+\newlabel{alg:cap-revoke}{{22}{43}{Delegation and Revocation}{algocf.22}{}}
 \newlabel{thm:revoke}{{11.2}{43}{Revocation Cascade Correctness}{theorem.11.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {11.6}Rights Model}{43}{section.11.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {chapter}{\numberline {12}Encrypted Database Engine}{45}{chapter.12}\protected@file@percent }
@@ -190,83 +194,181 @@
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
 \newlabel{ch:database}{{12}{45}{Encrypted Database Engine}{chapter.12}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {12.1}Per-Table Key Derivation}{45}{section.12.1}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {22}{\ignorespaces \textsc  {Derive-Table-Key}($\text  {table\_id}$): Derive AES key for table encryption.}}{45}{algocf.22}\protected@file@percent }
-\newlabel{alg:derive-key}{{22}{45}{Per-Table Key Derivation}{algocf.22}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {12.2}Query Execution Pipeline}{45}{section.12.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {12.1}{\ignorespaces Query execution pipeline. Capability checks occur before any data access.}}{45}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:query-pipeline}{{12.1}{45}{Query execution pipeline. Capability checks occur before any data access}{figure.caption.11}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {13}Query Parser}{47}{chapter.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.1}Per-Table Key Derivation with Domain Separation}{45}{section.12.1}\protected@file@percent }
+\newlabel{sec:key-derivation}{{12.1}{45}{Per-Table Key Derivation with Domain Separation}{section.12.1}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {23}{\ignorespaces \textsc  {Derive-Table-Keys}($\text  {table\_id}$): Derive AES and MAC keys with domain separation.}}{45}{algocf.23}\protected@file@percent }
+\newlabel{alg:derive-key}{{23}{45}{Per-Table Key Derivation with Domain Separation}{algocf.23}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.2}Record Serialization}{46}{section.12.2}\protected@file@percent }
+\newlabel{sec:record-serde}{{12.2}{46}{Record Serialization}{section.12.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.3}Encrypt-then-MAC Pipeline}{46}{section.12.3}\protected@file@percent }
+\newlabel{sec:encrypt-pipeline}{{12.3}{46}{Encrypt-then-MAC Pipeline}{section.12.3}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {24}{\ignorespaces \textsc  {Record-Encrypt}($\text  {rec}$, $\text  {table\_id}$): Encrypt a record for storage.}}{47}{algocf.24}\protected@file@percent }
+\newlabel{alg:record-encrypt}{{24}{47}{Encrypt-then-MAC Pipeline}{algocf.24}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12.1}{\ignorespaces Encrypt-then-MAC pipeline for record insertion. Green nodes indicate cryptographic operations.}}{47}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:encrypt-pipeline}{{12.1}{47}{Encrypt-then-MAC pipeline for record insertion. Green nodes indicate cryptographic operations}{figure.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.4}Verify-then-Decrypt Pipeline}{47}{section.12.4}\protected@file@percent }
+\newlabel{sec:decrypt-pipeline}{{12.4}{47}{Verify-then-Decrypt Pipeline}{section.12.4}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {25}{\ignorespaces \textsc  {Record-Decrypt}($\text  {enc}$, $\text  {table\_id}$): Verify MAC then decrypt.}}{48}{algocf.25}\protected@file@percent }
+\newlabel{alg:record-decrypt}{{25}{48}{Verify-then-Decrypt Pipeline}{algocf.25}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.5}Constant-Time Audit Logging}{49}{section.12.5}\protected@file@percent }
+\newlabel{sec:audit-ct}{{12.5}{49}{Constant-Time Audit Logging}{section.12.5}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {26}{\ignorespaces \textsc  {Audit-Log}($\text  {pid}$, $\text  {action}$, $\text  {target\_id}$, $\text  {result}$): Constant-time audit write.}}{49}{algocf.26}\protected@file@percent }
+\newlabel{alg:audit-log}{{26}{49}{Constant-Time Audit Logging}{algocf.26}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.6}Query Execution Pipeline}{49}{section.12.6}\protected@file@percent }
+\newlabel{sec:query-pipeline}{{12.6}{49}{Query Execution Pipeline}{section.12.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12.2}{\ignorespaces Query execution pipelines for SELECT and INSERT. Green nodes indicate cryptographic operations. UPDATE combines both paths: decrypt$\to $modify$\to $re-encrypt with a fresh IV.}}{49}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:query-pipeline}{{12.2}{49}{Query execution pipelines for SELECT and INSERT. Green nodes indicate cryptographic operations. UPDATE combines both paths: decrypt$\to $modify$\to $re-encrypt with a fresh IV}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {13}Query Parser}{51}{chapter.13}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{ch:query}{{13}{47}{Query Parser}{chapter.13}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {13.1}SQL Subset Grammar}{47}{section.13.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {13.2}Recursive-Descent Parser}{47}{section.13.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {part}{VI\hspace  {1em}Process Management}{49}{part.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {14}Processes and Scheduling}{51}{chapter.14}\protected@file@percent }
+\newlabel{ch:query}{{13}{51}{Query Parser}{chapter.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {13.1}SQL Subset Grammar}{51}{section.13.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {13.2}Recursive-Descent Parser}{51}{section.13.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {part}{VI\hspace  {1em}Process Management}{53}{part.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {14}Processes and Scheduling}{55}{chapter.14}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{ch:scheduler}{{14}{51}{Processes and Scheduling}{chapter.14}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {14.1}Process Control Block}{51}{section.14.1}\protected@file@percent }
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {14.1}{\ignorespaces Process structure (simplified).}}{51}{lstlisting.14.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {14.2}Process State Transitions}{51}{section.14.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {14.1}{\ignorespaces Process state transition diagram.}}{52}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:proc-states}{{14.1}{52}{Process state transition diagram}{figure.caption.12}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {14.3}Algorithm: \textsc  {Round-Robin-Schedule}}{52}{section.14.3}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {23}{\ignorespaces \textsc  {Schedule}(): Select the next process to run.}}{52}{algocf.23}\protected@file@percent }
-\newlabel{alg:schedule}{{23}{52}{Algorithm: \textsc {Round-Robin-Schedule}}{algocf.23}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {14.4}Context Switching}{52}{section.14.4}\protected@file@percent }
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {14.2}{\ignorespaces Context switch (x86-64 assembly, simplified).}}{52}{lstlisting.14.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {15}Inter-Process Communication}{55}{chapter.15}\protected@file@percent }
+\newlabel{ch:scheduler}{{14}{55}{Processes and Scheduling}{chapter.14}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.1}Process Control Block}{55}{section.14.1}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14.1}{\ignorespaces Process structure (simplified).}}{55}{lstlisting.14.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {14.2}Process State Transitions}{55}{section.14.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {14.1}{\ignorespaces Process state transition diagram.}}{56}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:proc-states}{{14.1}{56}{Process state transition diagram}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.3}Algorithm: \textsc  {Round-Robin-Schedule}}{56}{section.14.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {27}{\ignorespaces \textsc  {Schedule}(): Select the next process to run.}}{56}{algocf.27}\protected@file@percent }
+\newlabel{alg:schedule}{{27}{56}{Algorithm: \textsc {Round-Robin-Schedule}}{algocf.27}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {14.4}Context Switching}{56}{section.14.4}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14.2}{\ignorespaces Context switch (x86-64 assembly, simplified).}}{56}{lstlisting.14.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {15}Inter-Process Communication}{59}{chapter.15}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{ch:ipc}{{15}{55}{Inter-Process Communication}{chapter.15}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {15.1}Message-Passing Model}{55}{section.15.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {15.2}Message Queue}{55}{section.15.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {15.3}Algorithms: \textsc  {IPC-Send} and \textsc  {IPC-Recv}}{55}{section.15.3}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {24}{\ignorespaces \textsc  {IPC-Send}($\text  {src}$, $\text  {dst}$, $\text  {type}$, $\text  {payload}$, $\text  {len}$): Send a message.}}{55}{algocf.24}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {25}{\ignorespaces \textsc  {IPC-Recv}($\text  {pid}$): Receive first message addressed to $\text  {pid}$.}}{56}{algocf.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {part}{VII\hspace  {1em}Hardware Abstraction}{57}{part.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {16}x86-64 Architecture Support}{59}{chapter.16}\protected@file@percent }
+\newlabel{ch:ipc}{{15}{59}{Inter-Process Communication}{chapter.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {15.1}Message-Passing Model}{59}{section.15.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.2}Message Queue}{59}{section.15.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {15.3}Algorithms: \textsc  {IPC-Send} and \textsc  {IPC-Recv}}{59}{section.15.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {28}{\ignorespaces \textsc  {IPC-Send}($\text  {src}$, $\text  {dst}$, $\text  {type}$, $\text  {payload}$, $\text  {len}$): Send a message.}}{59}{algocf.28}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {29}{\ignorespaces \textsc  {IPC-Recv}($\text  {pid}$): Receive first message addressed to $\text  {pid}$.}}{60}{algocf.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {part}{VII\hspace  {1em}Hardware Abstraction}{61}{part.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {16}x86-64 Architecture Support}{63}{chapter.16}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{ch:x86}{{16}{59}{x86-64 Architecture Support}{chapter.16}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {16.1}GDT and TSS Configuration}{59}{section.16.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {16.2}Interrupt Handling}{59}{section.16.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {16.3}8259 PIC Initialization}{60}{section.16.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {16.4}SYSCALL/SYSRET Interface}{60}{section.16.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {16.5}CPUID Feature Detection}{60}{section.16.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {17}Device Drivers}{61}{chapter.17}\protected@file@percent }
+\newlabel{ch:x86}{{16}{63}{x86-64 Architecture Support}{chapter.16}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {16.1}GDT and TSS Configuration}{63}{section.16.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {16.2}Interrupt Handling}{63}{section.16.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {16.3}8259 PIC Initialization}{64}{section.16.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {16.4}SYSCALL/SYSRET Interface}{64}{section.16.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {16.5}CPUID Feature Detection}{64}{section.16.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {17}Device Drivers}{65}{chapter.17}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{ch:drivers}{{17}{61}{Device Drivers}{chapter.17}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {17.1}Serial Port (COM1)}{61}{section.17.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {17.2}GOP Framebuffer}{61}{section.17.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {17.3}PS/2 Keyboard}{61}{section.17.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {17.4}8$\times $16 Bitmap Font}{61}{section.17.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Virtual Address Space Map}{63}{appendix.A}\protected@file@percent }
+\newlabel{ch:drivers}{{17}{65}{Device Drivers}{chapter.17}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.1}Serial Port (COM1)}{65}{section.17.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.2}GOP Framebuffer}{65}{section.17.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.3}PS/2 Keyboard}{65}{section.17.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {17.4}PS/2 Mouse}{65}{section.17.4}\protected@file@percent }
+\newlabel{sec:mouse}{{17.4}{65}{PS/2 Mouse}{section.17.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {17.5}8$\times $16 Bitmap Font}{66}{section.17.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {part}{VIII\hspace  {1em}User Interface}{67}{part.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {18}VaultShell}{69}{chapter.18}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{app:vas}{{A}{63}{Virtual Address Space Map}{appendix.A}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {B}Syscall Number Table}{65}{appendix.B}\protected@file@percent }
+\newlabel{ch:shell}{{18}{69}{VaultShell}{chapter.18}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {18.1}Text User Interface}{69}{section.18.1}\protected@file@percent }
+\newlabel{sec:tui}{{18.1}{69}{Text User Interface}{section.18.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {18.1}{\ignorespaces VaultShell TUI layout. The status bar refreshes every 500\,ms.}}{69}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:tui-layout}{{18.1}{69}{VaultShell TUI layout. The status bar refreshes every 500\,ms}{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {18.2}Line Editor}{70}{section.18.2}\protected@file@percent }
+\newlabel{sec:line-editor}{{18.2}{70}{Line Editor}{section.18.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {18.3}Display Formatter}{70}{section.18.3}\protected@file@percent }
+\newlabel{sec:display}{{18.3}{70}{Display Formatter}{section.18.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {18.4}Algorithm: Context-Aware Tab Completion}{70}{section.18.4}\protected@file@percent }
+\newlabel{sec:completion}{{18.4}{70}{Algorithm: Context-Aware Tab Completion}{section.18.4}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {30}{\ignorespaces \textsc  {Complete-Find}($\text  {line}$, $\text  {cursor\_pos}$): context-aware completion.}}{71}{algocf.30}\protected@file@percent }
+\newlabel{alg:complete}{{30}{71}{Algorithm: Context-Aware Tab Completion}{algocf.30}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {19}Friendly Command Layer}{73}{chapter.19}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{app:syscalls}{{B}{65}{Syscall Number Table}{appendix.B}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {C}Error Code Reference}{67}{appendix.C}\protected@file@percent }
+\newlabel{ch:friendly}{{19}{73}{Friendly Command Layer}{chapter.19}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {19.1}Design: Commands as SQL Generators}{73}{section.19.1}\protected@file@percent }
+\newlabel{sec:friendly-design}{{19.1}{73}{Design: Commands as SQL Generators}{section.19.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {19.2}Command-to-SQL Translation}{73}{section.19.2}\protected@file@percent }
+\newlabel{sec:friendly-commands}{{19.2}{73}{Command-to-SQL Translation}{section.19.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {19.3}Table Aliases}{73}{section.19.3}\protected@file@percent }
+\newlabel{sec:aliases}{{19.3}{73}{Table Aliases}{section.19.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {19.1}{\ignorespaces Friendly commands and their SQL translations.}}{74}{table.caption.15}\protected@file@percent }
+\newlabel{tab:friendly-cmds}{{19.1}{74}{Friendly commands and their SQL translations}{table.caption.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {19.4}Script Engine}{74}{section.19.4}\protected@file@percent }
+\newlabel{sec:scripts}{{19.4}{74}{Script Engine}{section.19.4}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {31}{\ignorespaces \textsc  {Script-Save}($\text  {name}$): interactive multi-line script recording.}}{75}{algocf.31}\protected@file@percent }
+\newlabel{alg:script-save}{{31}{75}{Script Engine}{algocf.31}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {32}{\ignorespaces \textsc  {Script-Run}($\text  {name}$): execute a stored script.}}{75}{algocf.32}\protected@file@percent }
+\newlabel{alg:script-run}{{32}{75}{Script Engine}{algocf.32}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {19.5}Process Management Commands}{75}{section.19.5}\protected@file@percent }
+\newlabel{sec:proc-cmds}{{19.5}{75}{Process Management Commands}{section.19.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{spawn.}{75}{paragraph*.16}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {19.1}{\ignorespaces Script process entry point.}}{76}{lstlisting.19.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{kill.}{76}{paragraph*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{msg / inbox.}{76}{paragraph*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{monitor.}{76}{paragraph*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {19.6}Algorithm: Friendly-Translate}{77}{section.19.6}\protected@file@percent }
+\newlabel{sec:friendly-algo}{{19.6}{77}{Algorithm: Friendly-Translate}{section.19.6}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {33}{\ignorespaces \textsc  {Friendly-Translate}($\text  {input}$, $\text  {sql\_buf}$): convert a friendly command to SQL.}}{77}{algocf.33}\protected@file@percent }
+\newlabel{alg:friendly}{{33}{77}{Algorithm: Friendly-Translate}{algocf.33}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {20}Graphical Desktop}{79}{chapter.20}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{app:errors}{{C}{67}{Error Code Reference}{appendix.C}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {D}Performance Benchmarks}{69}{appendix.D}\protected@file@percent }
+\newlabel{ch:gui}{{20}{79}{Graphical Desktop}{chapter.20}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {20.1}Graphics Subsystem}{79}{section.20.1}\protected@file@percent }
+\newlabel{sec:graphics}{{20.1}{79}{Graphics Subsystem}{section.20.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {20.2}Event System}{80}{section.20.2}\protected@file@percent }
+\newlabel{sec:events}{{20.2}{80}{Event System}{section.20.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {20.3}Window Manager}{80}{section.20.3}\protected@file@percent }
+\newlabel{sec:wm}{{20.3}{80}{Window Manager}{section.20.3}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {20.1}{\ignorespaces Window structure (simplified).}}{80}{lstlisting.20.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {20.4}Compositor}{81}{section.20.4}\protected@file@percent }
+\newlabel{sec:compositor}{{20.4}{81}{Compositor}{section.20.4}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {34}{\ignorespaces \textsc  {Compositor-Render}(): render one frame of the desktop.}}{81}{algocf.34}\protected@file@percent }
+\newlabel{alg:compositor}{{34}{81}{Compositor}{algocf.34}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {20.5}Widget Toolkit}{81}{section.20.5}\protected@file@percent }
+\newlabel{sec:widgets}{{20.5}{81}{Widget Toolkit}{section.20.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {20.6}Desktop Applications}{81}{section.20.6}\protected@file@percent }
+\newlabel{sec:desktop-apps}{{20.6}{81}{Desktop Applications}{section.20.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Query Console.}{81}{paragraph*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Table Browser.}{82}{paragraph*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Process Manager.}{82}{paragraph*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{System Status.}{82}{paragraph*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Taskbar.}{82}{paragraph*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Virtual Address Space Map}{83}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{app:benchmarks}{{D}{69}{Performance Benchmarks}{appendix.D}{}}
-\gdef \@abspage@last{77}
+\newlabel{app:vas}{{A}{83}{Virtual Address Space Map}{appendix.A}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {B}Syscall Number Table}{85}{appendix.B}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{app:syscalls}{{B}{85}{Syscall Number Table}{appendix.B}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {C}Error Code Reference}{87}{appendix.C}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{app:errors}{{C}{87}{Error Code Reference}{appendix.C}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {D}Performance Benchmarks}{89}{appendix.D}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{app:benchmarks}{{D}{89}{Performance Benchmarks}{appendix.D}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {E}VaultShell Command Reference}{91}{appendix.E}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{app:commands}{{E}{92}{VaultShell Command Reference}{appendix.E}{}}
+\gdef \@abspage@last{100}

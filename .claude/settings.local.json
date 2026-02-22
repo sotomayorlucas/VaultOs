@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(wsl -d Ubuntu bash:*)",
-      "Bash(pdflatex:*)"
+      "Bash(pdflatex:*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"make -C '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' clean all 2>&1\":*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"make -C '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' clean all 2>&1 | tail -20\":*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"make -C ''/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel'' clean all 2>&1 | grep -i ''warning\\\\|error'' | grep -v ''syscall_entry\\\\|deprecated''\")",
+      "Bash(grep:*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel/doc' && pdflatex -interaction=nonstopmode vaultos.tex 2>&1 | tail -30\":*)",
+      "Bash(find:*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd ''/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel'' && make clean && make kernel 2>&1\")",
+      "Bash(\"C:\\\\texlive\\\\2025\\\\bin\\\\windows\\\\pdflatex.exe\" -interaction=nonstopmode vaultos.tex)",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' && make clean && make:*)",
+      "Bash(wsl -d Ubuntu -- bash -c \"cd '/mnt/c/Users/sotom/OneDrive/Escritorio/nanoKernel' && make 2>&1\":*)"
     ]
   }
 }

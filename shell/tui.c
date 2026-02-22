@@ -3,8 +3,12 @@
 #include "../kernel/lib/printf.h"
 #include "../kernel/lib/string.h"
 #include "../kernel/mm/heap.h"
+#include "../kernel/mm/pmm.h"
 #include "../kernel/arch/x86_64/pit.h"
 #include "../kernel/db/database.h"
+#include "../kernel/crypto/random.h"
+#include "../kernel/cap/cap_table.h"
+#include "../kernel/proc/process.h"
 
 static tui_layout_t layout;
 
@@ -30,20 +34,16 @@ void tui_draw_status_bar(void) {
     uint32_t fg_label = COLOR_GRAY;
     uint32_t fg_value = COLOR_VOS_HL;
     uint32_t bg = COLOR_DKGRAY;
+    char buf[64];
 
-    /* Row 0: VaultOS title + uptime */
+    /* ── Row 0: Title │ Uptime │ PID:N name │ Procs: N ── */
     uint32_t col = 0;
-
-    /* Left side: title */
     tui_draw_string(col, 0, " VaultOS v0.1.0", COLOR_WHITE, bg);
     col = 16;
 
-    /* Separator */
-    fb_draw_cell(col, 0, '\xB3', fg_label, bg); /* vertical bar */
+    fb_draw_cell(col, 0, '\xB3', fg_label, bg);
     col++;
 
-    /* Uptime */
-    char buf[64];
     uint64_t ms = pit_get_uptime_ms();
     uint64_t secs = ms / 1000;
     uint64_t mins = secs / 60;
@@ -52,12 +52,33 @@ void tui_draw_status_bar(void) {
     tui_draw_string(col, 0, buf, fg_value, bg);
     col += strlen(buf);
 
+    fb_draw_cell(col, 0, '\xB3', fg_label, bg);
+    col++;
+
+    process_t *cur = process_get_current();
+    if (cur) {
+        snprintf(buf, sizeof(buf), " PID:%llu %s ",
+                 (unsigned long long)cur->pid, cur->name);
+        /* Truncate if too long */
+        if (strlen(buf) > 20) { buf[19] = ' '; buf[20] = '\0'; }
+        tui_draw_string(col, 0, buf, COLOR_CYAN, bg);
+        col += strlen(buf);
+    }
+
+    fb_draw_cell(col, 0, '\xB3', fg_label, bg);
+    col++;
+
+    snprintf(buf, sizeof(buf), " Caps: %llu ",
+             (unsigned long long)cap_table_count());
+    tui_draw_string(col, 0, buf, fg_value, bg);
+    col += strlen(buf);
+
     tui_fill_row(col, 0, fg_label, bg);
 
-    /* Row 1: Heap + Tables */
+    /* ── Row 1: Heap │ PMM │ Tables │ [RNG:xx] AES-128 ── */
     col = 0;
-    tui_draw_string(col, 1, " Heap: ", fg_label, bg);
-    col = 7;
+    tui_draw_string(col, 1, " Heap:", fg_label, bg);
+    col = 6;
 
     size_t used = heap_used();
     size_t free_mem = heap_free();
@@ -75,30 +96,41 @@ void tui_draw_status_bar(void) {
 
     size_t total = used + free_mem;
     if (total >= 1024 * 1024)
-        snprintf(buf, sizeof(buf), "%lluMB", (uint64_t)total / (1024 * 1024));
+        snprintf(buf, sizeof(buf), "%lluMB ", (uint64_t)total / (1024 * 1024));
     else
-        snprintf(buf, sizeof(buf), "%lluKB", (uint64_t)total / 1024);
+        snprintf(buf, sizeof(buf), "%lluKB ", (uint64_t)total / 1024);
     tui_draw_string(col, 1, buf, fg_value, bg);
     col += strlen(buf);
 
-    /* Separator */
-    tui_draw_string(col, 1, " ", fg_label, bg);
-    col++;
     fb_draw_cell(col, 1, '\xB3', fg_label, bg);
     col++;
 
-    /* Tables */
-    snprintf(buf, sizeof(buf), " Tables: %u ", db_get_table_count());
+    uint64_t pmm_free = pmm_get_free_pages();
+    uint64_t pmm_total = pmm_get_total_pages();
+    snprintf(buf, sizeof(buf), " PMM:%llu/%llu ",
+             (unsigned long long)pmm_free, (unsigned long long)pmm_total);
     tui_draw_string(col, 1, buf, fg_value, bg);
     col += strlen(buf);
 
-    /* Separator */
     fb_draw_cell(col, 1, '\xB3', fg_label, bg);
     col++;
 
-    /* Encrypted indicator */
-    tui_draw_string(col, 1, " AES-128-CBC ", COLOR_GREEN, bg);
-    col += 13;
+    snprintf(buf, sizeof(buf), " Tabs:%u ", db_get_table_count());
+    tui_draw_string(col, 1, buf, fg_value, bg);
+    col += strlen(buf);
+
+    fb_draw_cell(col, 1, '\xB3', fg_label, bg);
+    col++;
+
+    if (random_hw_available()) {
+        tui_draw_string(col, 1, " RNG:HW", COLOR_GREEN, bg);
+        col += 7;
+    } else {
+        tui_draw_string(col, 1, " RNG:SW", COLOR_YELLOW, bg);
+        col += 7;
+    }
+    tui_draw_string(col, 1, " AES-128 ", COLOR_GREEN, bg);
+    col += 9;
 
     tui_fill_row(col, 1, fg_label, bg);
 }
@@ -112,14 +144,16 @@ void tui_draw_fkey_bar(void) {
         {"F1", "Help"},
         {"F2", "Tables"},
         {"F3", "Status"},
+        {"F4", "Security"},
         {"F5", "Clear"},
+        {"F6", "Audit"},
     };
 
     uint32_t col = 0;
     fb_draw_cell(col, row, ' ', COLOR_WHITE, bg);
     col++;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
         /* F-key name in highlight */
         tui_draw_string(col, row, fkeys[i].key, COLOR_VOS_HL, bg);
         col += strlen(fkeys[i].key);
